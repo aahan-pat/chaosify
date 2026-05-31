@@ -1,84 +1,76 @@
-// Shared terminal output helpers used by all CLI commands.
-// Centralises chalk styling so colour and layout are consistent across commands.
+// Shared terminal output helpers — centralises chalk styling across all commands.
 import chalk from 'chalk'
-import type { ScenarioOutcome } from '../types/evidence.js'
-import type { PreflightCheckStatus } from '../core/preflight.js'
 import type { ReconFinding, ReconFindingSeverity } from '../types/recon.js'
 
-/** Pre-built coloured status badges used inline in output lines */
-export const status = {
-  pass: chalk.green('[PASS]'),
-  fail: chalk.red('[FAIL]'),
-  error: chalk.red('[ERROR]'),
-  skipped: chalk.yellow('[SKIPPED]'),
-  warn: chalk.yellow('[WARN]'),
-}
 
-/** Maps a ScenarioOutcome enum value to its coloured badge string */
-export function outcomeLabel(outcome: ScenarioOutcome): string {
-  switch (outcome) {
-    case 'Pass': return status.pass
-    case 'Fail': return status.fail
-    case 'Error': return status.error
-    case 'Skipped': return status.skipped
-  }
-}
-
-/** Maps a PreflightCheckStatus to its coloured badge string */
-export function preflightLabel(s: PreflightCheckStatus): string {
-  switch (s) {
-    case 'pass': return status.pass
-    case 'fail': return status.fail
-    case 'warn': return status.warn
-  }
-}
-
-/** Print a bold section title preceded by a blank line */
+/**
+ * Prints a bold section title preceded by a blank line.
+ * @param title Title text to display.
+ */
 export function header(title: string): void {
-  console.log()
-  console.log(chalk.bold(title))
+    console.log()
+    console.log(chalk.bold(title))
 }
 
-/** Print a dimmed key followed by its value on a single line */
+/**
+ * Prints a dimmed key followed by its value on a single line.
+ * @param key Label to display dimmed.
+ * @param value Value to display alongside the key.
+ */
 export function field(key: string, value: string): void {
-  console.log(`${chalk.dim(key + ':')} ${value}`)
+    console.log(`${chalk.dim(key + ':')} ${value}`)
 }
 
-/** Print a bold sub-section heading preceded by a blank line */
+/**
+ * Prints a bold sub-section heading preceded by a blank line.
+ * @param title Heading text to display.
+ */
 export function section(title: string): void {
-  console.log()
-  console.log(chalk.bold(title))
+    console.log()
+    console.log(chalk.bold(title))
 }
 
-/** Print text indented by depth spaces (default 2) */
+/**
+ * Prints text indented by a given number of spaces.
+ * @param text Text to indent.
+ * @param depth Number of spaces to indent by.
+ */
 export function indent(text: string, depth = 2): void {
-  console.log(' '.repeat(depth) + text)
+    console.log(' '.repeat(depth) + text)
 }
 
-/** Print an empty line for vertical spacing */
+/** Prints an empty line for vertical spacing. */
 export function blank(): void {
-  console.log()
+    console.log()
 }
 
-/** Maps a ReconFindingSeverity to its coloured badge string */
-export function reconFindingLabel(severity: ReconFindingSeverity): string {
-  switch (severity) {
-    case 'CRITICAL': return chalk.red('[CRITICAL]')
-    case 'HIGH':     return chalk.red('[HIGH]')
-    case 'WARN':     return chalk.yellow('[WARN]')
-    case 'INFO':     return chalk.dim('[INFO]')
-    case 'SKIP':     return chalk.yellow('[SKIP]')
-  }
+// Single badge lookup for all status strings — index with any status key across all commands.
+export const badge = {
+    PASS: chalk.green('[PASS]'),
+    FAIL: chalk.red('[FAIL]'),
+    ERROR: chalk.red('[ERROR]'),
+    SKIPPED: chalk.yellow('[SKIPPED]'),
+    WARN: chalk.yellow('[WARN]'),
+    CRITICAL: chalk.red('[CRITICAL]'),
+    HIGH: chalk.red('[HIGH]'),
+    INFO: chalk.dim('[INFO]'),
+    SKIP: chalk.yellow('[SKIP]'),
+    ok: chalk.green('[OK]'),
+    'already-existed': chalk.dim('[OK]'),
+    failed: chalk.red('[ERROR]'),
 }
 
-/** Print the Findings section for any recon command — shared across all recon CLI modules */
+/**
+ * Prints the Findings section for any recon command.
+ * @param findings List of findings to render.
+ */
 export function renderReconFindings(findings: ReconFinding[]): void {
-  if (findings.length === 0) return
-  section('Findings')
-  for (const f of findings) {
-    blank()
-    indent(`${reconFindingLabel(f.severity)} ${f.title}`)
-    indent(f.detail, 9)
-    if (f.coverageImpact) indent(`Impact: ${f.coverageImpact}`, 9)
-  }
+    if (findings.length === 0) return
+    section('Findings')
+    for (const f of findings) {
+        blank()
+        indent(`${badge[f.severity]} ${f.title}`)
+        indent(f.detail, 9)
+        if (f.coverageImpact) indent(`Impact: ${f.coverageImpact}`, 9)
+    }
 }

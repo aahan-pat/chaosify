@@ -1,7 +1,5 @@
 // Shared terminal output helpers — centralises chalk styling across all commands.
 import chalk from 'chalk'
-import type { ReconFinding, ReconFindingSeverity } from '../types/recon.js'
-
 
 /**
  * Prints a bold section title preceded by a blank line.
@@ -60,17 +58,3 @@ export const badge = {
     failed: chalk.red('[ERROR]'),
 }
 
-/**
- * Prints the Findings section for any recon command.
- * @param findings List of findings to render.
- */
-export function renderReconFindings(findings: ReconFinding[]): void {
-    if (findings.length === 0) return
-    section('Findings')
-    for (const f of findings) {
-        blank()
-        indent(`${badge[f.severity]} ${f.title}`)
-        indent(f.detail, 9)
-        if (f.coverageImpact) indent(`Impact: ${f.coverageImpact}`, 9)
-    }
-}

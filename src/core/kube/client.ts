@@ -35,3 +35,11 @@ export function appsV1Api(kc: k8s.KubeConfig): k8s.AppsV1Api {
     return kc.makeApiClient(k8s.AppsV1Api)
 }
 
+/**
+ * Creates a NetworkingV1Api client bound to the given kubeconfig.
+ * @param kc Loaded kubeconfig to bind the client to.
+ */
+export function networkingV1Api(kc: k8s.KubeConfig): k8s.NetworkingV1Api {
+    return kc.makeApiClient(k8s.NetworkingV1Api)
+}
+

@@ -1,5 +1,6 @@
 import {Command} from "commander";
 import { init } from './commands/recon/init.js';
+import {networkPolicies} from "./commands/recon/network-policies.js";
 
 // Provides a registration layer for attaching subcommands to a Commander program.
 export class Registry {
@@ -26,7 +27,6 @@ export class Registry {
         // Instantiate a Registry for wiring subcommands.
         const registry = new Registry()
 
-        // Register commands here.
         program
             .command('version')
             .description('Print the chaosclaw version')
@@ -38,7 +38,10 @@ export class Registry {
             .command('recon')
             .description('Survey cluster security posture before pentest execution')
 
+        // Register commands here.
         registry.register(recon, init)
+        registry.register(recon, networkPolicies)
+        
 
         return program;
     }

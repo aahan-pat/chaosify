@@ -1,5 +1,4 @@
-// Types for the recon layer — intentionally separate from the evidence schema.
-// Recon findings feed OpenClaw for analysis, not the pass/fail verdict system.
+// Types for the recon layer — intentionally separate from the evidence schema used for pass/fail verdicts.
 
 export type ReconFindingSeverity = 'CRITICAL' | 'HIGH' | 'WARN' | 'INFO' | 'SKIP'
 
@@ -7,9 +6,9 @@ export interface ReconFinding {
     severity: ReconFindingSeverity
     title: string
     detail: string
-    /** Which permission was missing — present on SKIP findings only. */
+    /** SKIP findings only. */
     missingPermission?: string
-    /** What coverage was lost — present on SKIP findings only. */
+    /** SKIP findings only. */
     coverageImpact?: string
 }
 

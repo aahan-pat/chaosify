@@ -1,9 +1,10 @@
 // Implements "chaosclaw recon init" — creates the chaosclaw namespace and applies RBAC scoping.
-import type { Command } from 'commander'
+import type {Command} from 'commander'
 import chalk from 'chalk'
-import { ReconInitEngine, type InitResult } from '../../../core/recon/init.js'
-import { header, field, section, indent, blank, badge } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from './shared.js'
+import {initNamespace, type InitResult} from '../../../core/recon/init.js'
+import type {Step} from '../../../core/utils/step.js'
+import {header, field, section, indent, blank, badge} from '../../output.js'
+import {buildKubeConfig, DEFAULT_RECON_NAMESPACE} from './shared.js'
 
 /**
  * Attaches the "init" subcommand to the recon command group.
@@ -17,11 +18,11 @@ export function init(recon: Command): void {
         .option('--namespace <name>', 'Test namespace name', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .action(async (opts: { context?: string; namespace: string; format: string }) => {
-            const { kc, clusterContext } = buildKubeConfig(opts.context)
+            const {kc, clusterContext} = buildKubeConfig(opts.context)
 
             let result: InitResult
             try {
-                result = await new ReconInitEngine(kc).run({ namespace: opts.namespace, context: opts.context })
+                result = await initNamespace(kc, {namespace: opts.namespace, context: opts.context})
             } catch (err) {
                 console.error(`\nError\n  Could not initialize recon namespace: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)

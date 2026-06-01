@@ -1,7 +1,7 @@
 import type { Command } from 'commander'
 import { surveyNetworkPolicies, type NamespaceNetworkStatus } from '../../../core/recon/network-policies.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './shared.js'
+import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
 
 /**
  * Attaches the "network-policies" subcommand to the recon command group.

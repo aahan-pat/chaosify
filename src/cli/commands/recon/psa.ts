@@ -1,16 +1,17 @@
 import type { Command } from 'commander'
-import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
+import chalk from 'chalk'
+import { surveyPsa, type NamespacePsaStatus } from '../../../core/recon/psa.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
 
 /**
- * Attaches the "nodes" subcommand to the recon command group.
+ * Attaches the "psa" subcommand to the recon command group.
  * @param recon The recon command group to attach to.
  */
-export function nodes(recon: Command): void {
+export function psa(recon: Command): void {
     recon
-        .command('nodes')
-        .description('Survey node security posture: kernel, container runtime, AppArmor and seccomp')
+        .command('psa')
+        .description('Survey Pod Security Admission labels across all namespaces')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
@@ -20,9 +21,9 @@ export function nodes(recon: Command): void {
 
             let result
             try {
-                result = await surveyNodes(kc, { namespace: opts.namespace, context: opts.context })
+                result = await surveyPsa(kc, { namespace: opts.namespace, context: opts.context })
             } catch (err) {
-                console.error(`\nError\n  Node recon failed: ${err instanceof Error ? err.message : String(err)}`)
+                console.error(`\nError\n  PSA recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
             }
 
@@ -33,7 +34,7 @@ export function nodes(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Node Security Posture')
+            header('ChaosClaw Recon — Pod Security Admission')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {
@@ -42,13 +43,21 @@ export function nodes(recon: Command): void {
                 process.exit(0)
             }
 
-            const nodeList = (result.data as { nodes?: NodeInfo[] }).nodes ?? []
-            section(`Nodes (${nodeList.length})`)
-            for (const node of nodeList) {
-                blank()
-                indent(node.name)
-                indent(`OS: ${node.os} Kernel: ${node.kernel}`, 4)
-                indent(`Runtime: ${node.runtime} Seccomp: ${node.seccompDefault}`, 4)
+            const namespaces = (result.data as { namespaces?: NamespacePsaStatus[] }).namespaces ?? []
+            // Pad a PSA level to a fixed column width, replacing absent labels with '—'.
+            const col = (s: string | undefined, width = 14) => (s ?? '—').padEnd(width)
+
+            section('Namespace PSA Labels')
+            blank()
+            // Fixed-width header row so columns align with the data rows below.
+            indent(`${'Namespace'.padEnd(28)} ${'Enforce'.padEnd(14)} ${'Audit'.padEnd(14)} Warn`)
+            indent('─'.repeat(72))
+            for (const ns of namespaces) {
+                // Flag non-system namespaces with no labels — they are completely unprotected.
+                const mark = !ns.enforce && !ns.audit && !ns.warn && !ns.isSystem
+                    ? chalk.yellow('  ← no labels')
+                    : ''
+                indent(`${ns.namespace.padEnd(28)} ${col(ns.enforce)} ${col(ns.audit)} ${col(ns.warn)}${mark}`)
             }
 
             renderFindings(result.findings)

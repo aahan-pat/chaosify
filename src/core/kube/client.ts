@@ -43,3 +43,11 @@ export function networkingV1Api(kc: k8s.KubeConfig): k8s.NetworkingV1Api {
     return kc.makeApiClient(k8s.NetworkingV1Api)
 }
 
+/**
+ * Creates an AdmissionregistrationV1Api client bound to the given kubeconfig.
+ * @param kc Loaded kubeconfig to bind the client to.
+ */
+export function admissionregistrationV1Api(kc: k8s.KubeConfig): k8s.AdmissionregistrationV1Api {
+    return kc.makeApiClient(k8s.AdmissionregistrationV1Api)
+}
+

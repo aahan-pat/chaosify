@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node'
 import { coreV1Api, networkingV1Api } from '../kube/client.js'
-import { reconWrapper } from '../utils/recon.js'
+import { reconWrapper, SYSTEM_NAMESPACES } from '../utils/recon.js'
 import type { ReconFinding, ReconOptions, ReconToolResult } from '../../types/recon.js'
 
 export interface NamespaceNetworkStatus {
@@ -9,9 +9,6 @@ export interface NamespaceNetworkStatus {
     hasIngress: boolean
     hasEgress: boolean
 }
-
-// Kube generated namespaces to ignore.
-const SYSTEM_NAMESPACES = new Set(['kube-system', 'kube-public', 'kube-node-lease'])
 
 function analyze(namespaces: NamespaceNetworkStatus[]): ReconFinding[] {
     const findings: ReconFinding[] = []

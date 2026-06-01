@@ -1,6 +1,9 @@
 import { isForbidden } from '../kube/errors.js'
 import type { ReconFinding, ReconToolResult } from '../../types/recon.js'
 
+// Kubernetes-managed namespaces excluded from all recon surveys — expected to run privileged workloads.
+export const SYSTEM_NAMESPACES = new Set(['kube-system', 'kube-public', 'kube-node-lease'])
+
 /**
  * Convenience wrapper mapping 403 to skip and other errors to error status.
  * Optional — commands with custom error handling can write their own try/catch.

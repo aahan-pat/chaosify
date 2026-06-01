@@ -2,9 +2,8 @@
 import type {Command} from 'commander'
 import chalk from 'chalk'
 import {initNamespace, type InitResult} from '../../../core/recon/init.js'
-import type {Step} from '../../../core/utils/step.js'
 import {header, field, section, indent, blank, badge} from '../../output.js'
-import {buildKubeConfig, DEFAULT_RECON_NAMESPACE} from './shared.js'
+import {buildKubeConfig, DEFAULT_RECON_NAMESPACE} from './utils/shared.js'
 
 /**
  * Attaches the "init" subcommand to the recon command group.

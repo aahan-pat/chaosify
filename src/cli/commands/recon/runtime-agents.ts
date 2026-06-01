@@ -1,16 +1,16 @@
 import type { Command } from 'commander'
-import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
+import { surveyRuntimeAgents, type AgentStatus } from '../../../core/recon/runtime-agents.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
 
 /**
- * Attaches the "nodes" subcommand to the recon command group.
+ * Attaches the "runtime-agents" subcommand to the recon command group.
  * @param recon The recon command group to attach to.
  */
-export function nodes(recon: Command): void {
+export function runtimeAgents(recon: Command): void {
     recon
-        .command('nodes')
-        .description('Survey node security posture: kernel, container runtime, AppArmor and seccomp')
+        .command('runtime-agents')
+        .description('Detect runtime security agents: Falco, KubeArmor, Tetragon, Tracee')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
@@ -20,9 +20,9 @@ export function nodes(recon: Command): void {
 
             let result
             try {
-                result = await surveyNodes(kc, { namespace: opts.namespace, context: opts.context })
+                result = await surveyRuntimeAgents(kc, { namespace: opts.namespace, context: opts.context })
             } catch (err) {
-                console.error(`\nError\n  Node recon failed: ${err instanceof Error ? err.message : String(err)}`)
+                console.error(`\nError\n  Runtime agent recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
             }
 
@@ -33,7 +33,7 @@ export function nodes(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Node Security Posture')
+            header('ChaosClaw Recon — Runtime Agents')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {
@@ -42,13 +42,18 @@ export function nodes(recon: Command): void {
                 process.exit(0)
             }
 
-            const nodeList = (result.data as { nodes?: NodeInfo[] }).nodes ?? []
-            section(`Nodes (${nodeList.length})`)
-            for (const node of nodeList) {
-                blank()
-                indent(node.name)
-                indent(`OS: ${node.os} Kernel: ${node.kernel}`, 4)
-                indent(`Runtime: ${node.runtime} Seccomp: ${node.seccompDefault}`, 4)
+            const data = result.data as { daemonsetsScanned?: number; agents?: AgentStatus[] }
+            section('Runtime Detection')
+            for (const agent of data.agents ?? []) {
+                if (agent.detected) {
+                    // Show partial coverage inline so under-rolled DaemonSets are immediately visible.
+                    const coverage = agent.readyNodes === agent.desiredNodes
+                        ? 'full node coverage'
+                        : `${agent.readyNodes}/${agent.desiredNodes} nodes`
+                    indent(`${agent.name}: detected (${coverage})`)
+                } else {
+                    indent(`${agent.name}: not detected`)
+                }
             }
 
             renderFindings(result.findings)

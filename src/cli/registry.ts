@@ -41,7 +41,7 @@ export class Registry {
         // Register commands here.
         registry.register(recon, init)
         registry.register(recon, networkPolicies)
-        
+
 
         return program;
     }

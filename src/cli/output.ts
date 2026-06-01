@@ -42,6 +42,8 @@ export function blank(): void {
     console.log()
 }
 
+import type { ReconFinding } from '../types/recon.js'
+
 // Single badge lookup for all status strings — index with any status key across all commands.
 export const badge = {
     PASS: chalk.green('[PASS]'),
@@ -58,3 +60,17 @@ export const badge = {
     failed: chalk.red('[ERROR]'),
 }
 
+/**
+ * Prints the Findings section for any recon command.
+ * @param findings List of findings to render.
+ */
+export function renderFindings(findings: ReconFinding[]): void {
+    if (findings.length === 0) return
+    section('Findings')
+    for (const f of findings) {
+        blank()
+        indent(`${badge[f.severity]} ${f.title}`)
+        indent(f.detail, 9)
+        if (f.coverageImpact) indent(`Impact: ${f.coverageImpact}`, 9)
+    }
+}

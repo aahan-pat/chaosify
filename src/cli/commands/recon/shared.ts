@@ -15,9 +15,9 @@ export function buildKubeConfig(context?: string): { kc: k8s.KubeConfig; cluster
 }
 
 /**
- * Serialises data as formatted JSON and writes it to a file.
+ * Serializes data as formatted JSON and writes it to a file.
  * @param filePath Destination file path.
- * @param data Data to serialise.
+ * @param data Data to serialize.
  */
 export async function writeJsonToFile(filePath: string, data: unknown): Promise<void> {
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')

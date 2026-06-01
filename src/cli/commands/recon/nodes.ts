@@ -1,16 +1,16 @@
 import type { Command } from 'commander'
-import { surveyNetworkPolicies, type NamespaceNetworkStatus } from '../../../core/recon/network-policies.js'
+import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './shared.js'
 
 /**
- * Attaches the "network-policies" subcommand to the recon command group.
+ * Attaches the "nodes" subcommand to the recon command group.
  * @param recon The recon command group to attach to.
  */
-export function networkPolicies(recon: Command): void {
+export function nodes(recon: Command): void {
     recon
-        .command('network-policies')
-        .description('Survey NetworkPolicy coverage across all user namespaces')
+        .command('nodes')
+        .description('Survey node security posture: kernel, container runtime, AppArmor and seccomp')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
@@ -20,9 +20,9 @@ export function networkPolicies(recon: Command): void {
 
             let result
             try {
-                result = await surveyNetworkPolicies(kc, { namespace: opts.namespace, context: opts.context })
+                result = await surveyNodes(kc, { namespace: opts.namespace, context: opts.context })
             } catch (err) {
-                console.error(`\nError\n  Network policy recon failed: ${err instanceof Error ? err.message : String(err)}`)
+                console.error(`\nError\n  Node recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
             }
 
@@ -33,7 +33,7 @@ export function networkPolicies(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Network Policies')
+            header('ChaosClaw Recon — Node Security Posture')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {
@@ -42,22 +42,13 @@ export function networkPolicies(recon: Command): void {
                 process.exit(0)
             }
 
-            const namespaces = (result.data as { namespaces?: NamespaceNetworkStatus[] }).namespaces ?? []
-            const withPolicies = namespaces.filter(n => n.policyCount > 0)
-            const withoutPolicies = namespaces.filter(n => n.policyCount === 0)
-
-            if (withPolicies.length > 0) {
-                section('Namespaces with policies')
-                for (const ns of withPolicies) {
-                    // Build a coverage label from boolean flags e.g. 'ingress + egress'.
-                    const coverage = [ns.hasIngress ? 'ingress' : null, ns.hasEgress ? 'egress' : null].filter(Boolean).join(' + ')
-                    indent(`${ns.namespace} ${ns.policyCount} policies ${coverage}`)
-                }
-            }
-
-            if (withoutPolicies.length > 0) {
-                section('Namespaces without policies')
-                for (const ns of withoutPolicies) indent(ns.namespace)
+            const nodeList = (result.data as { nodes?: NodeInfo[] }).nodes ?? []
+            section(`Nodes (${nodeList.length})`)
+            for (const node of nodeList) {
+                blank()
+                indent(node.name)
+                indent(`OS: ${node.os} Kernel: ${node.kernel}`, 4)
+                indent(`Runtime: ${node.runtime} Seccomp: ${node.seccompDefault}`, 4)
             }
 
             renderFindings(result.findings)

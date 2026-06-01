@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node'
 import { coreV1Api, networkingV1Api } from '../kube/client.js'
-import { isForbidden } from '../kube/errors.js'
+import { reconWrapper } from '../utils/recon.js'
 import type { ReconFinding, ReconOptions, ReconToolResult } from '../../types/recon.js'
 
 export interface NamespaceNetworkStatus {
@@ -10,7 +10,7 @@ export interface NamespaceNetworkStatus {
     hasEgress: boolean
 }
 
-// Kube generated namespaces to ignore
+// Kube generated namespaces to ignore.
 const SYSTEM_NAMESPACES = new Set(['kube-system', 'kube-public', 'kube-node-lease'])
 
 function analyze(namespaces: NamespaceNetworkStatus[]): ReconFinding[] {
@@ -46,11 +46,16 @@ function analyze(namespaces: NamespaceNetworkStatus[]): ReconFinding[] {
  * @param kc Loaded kubeconfig to use for all API calls.
  * @param options Recon options containing namespace and optional context.
  */
-export async function surveyNetworkPolicies(kc: k8s.KubeConfig, options: ReconOptions): Promise<ReconToolResult> {
+export function surveyNetworkPolicies(kc: k8s.KubeConfig, options: ReconOptions): Promise<ReconToolResult> {
     const networking = networkingV1Api(kc)
     const core = coreV1Api(kc)
 
-    try {
+    return reconWrapper('network-policies', {
+        title: 'Network policy recon skipped',
+        detail: 'Cannot list NetworkPolicies cluster-wide — insufficient permissions',
+        missingPermission: 'list networkpolicies (all namespaces)',
+        coverageImpact: 'Network segmentation gaps cannot be identified',
+    }, async () => {
         // Fetch policies and namespaces in parallel to reduce latency.
         const [policiesRes, namespacesRes] = await Promise.all([
             networking.listNetworkPolicyForAllNamespaces(),
@@ -82,23 +87,6 @@ export async function surveyNetworkPolicies(kc: k8s.KubeConfig, options: ReconOp
             hasEgress: policies.some(p => (p.spec?.policyTypes ?? []).includes('Egress')),
         }))
 
-        return { tool: 'network-policies', status: 'ok', findings: analyze(namespaces), data: { namespaces } }
-    } catch (err) {
-        // Return status for error
-        if (isForbidden(err)) {
-            return {
-                tool: 'network-policies',
-                status: 'skip',
-                findings: [{
-                    severity: 'SKIP',
-                    title: 'Network policy recon skipped',
-                    detail: 'Cannot list NetworkPolicies cluster-wide — insufficient permissions',
-                    missingPermission: 'list networkpolicies (all namespaces)',
-                    coverageImpact: 'Network segmentation gaps cannot be identified',
-                }],
-                data: {},
-            }
-        }
-        return { tool: 'network-policies', status: 'error', findings: [], data: { error: err instanceof Error ? err.message : String(err) } }
-    }
+        return { findings: analyze(namespaces), data: { namespaces } }
+    })
 }

@@ -1,0 +1,31 @@
+id: deny-forbidden-capabilities
+version: 1
+name: Forbidden Linux capabilities denied
+description: Attempts to create a pod requesting a dangerous Linux capability (NET_ADMIN). The cluster should reject it.
+category: preventive
+controlObjective: Restrict dangerous Linux capabilities
+prerequisites:
+  - name: can_create_pods
+    description: Permission to create pods in the test namespace
+  - name: capabilities_policy
+    description: Admission policy that restricts Linux capabilities
+manifest:
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: chaosclaw-capabilities-test
+  spec:
+    containers:
+      - name: test
+        image: busybox:1.36
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+expectedOutcome:
+  type: admission_rejected
+cleanup:
+  deleteCreatedResources: true
+safety:
+  level: low
+  namespaceScoped: true

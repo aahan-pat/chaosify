@@ -1,5 +1,8 @@
-// Shared terminal output helpers — centralises chalk styling across all commands.
+// Shared terminal output helpers â€” centralises chalk styling across all commands.
 import chalk from 'chalk'
+import type { ScenarioOutcome } from '../types/evidence.js'
+import type { PreflightCheckStatus } from '../core/setup/preflight.js'
+import type { ReconFinding } from '../types/recon.js'
 
 /**
  * Prints a bold section title preceded by a blank line.
@@ -42,9 +45,7 @@ export function blank(): void {
     console.log()
 }
 
-import type { ReconFinding } from '../types/recon.js'
-
-// Single badge lookup for all status strings — index with any status key across all commands.
+// Single badge lookup for all status strings â€” index with any status key across all commands.
 export const badge = {
     PASS: chalk.green('[PASS]'),
     FAIL: chalk.red('[FAIL]'),
@@ -58,6 +59,45 @@ export const badge = {
     ok: chalk.green('[OK]'),
     'already-existed': chalk.dim('[OK]'),
     failed: chalk.red('[ERROR]'),
+}
+
+/** Maps a ScenarioOutcome to its coloured badge string */
+export function outcomeLabel(outcome: ScenarioOutcome): string {
+    switch (outcome) {
+        case 'Pass':    return badge.PASS
+        case 'Fail':    return badge.FAIL
+        case 'Error':   return badge.ERROR
+        case 'Skipped': return badge.SKIPPED
+    }
+}
+
+/** Maps a PreflightCheckStatus to its coloured badge string */
+export function preflightLabel(s: PreflightCheckStatus): string {
+    switch (s) {
+        case 'pass': return badge.PASS
+        case 'fail': return badge.FAIL
+        case 'warn': return badge.WARN
+    }
+}
+
+/** Print an alert detail section for exec/network/detect commands */
+export function printAlertSection(alert: { source: string; ruleName: string; podName: string; triggeredAt: string; action?: string }): void {
+    section('Alert Fired')
+    indent(`Source:    ${alert.source}`)
+    indent(`Rule:      ${alert.ruleName}`)
+    indent(`Pod:       ${alert.podName}`)
+    indent(`Action:    ${alert.action ?? 'detected'}`)
+    indent(`Triggered: ${alert.triggeredAt}`)
+}
+
+/** Print a cleanup warning listing resources that need manual deletion */
+export function printCleanupWarning(resources: Array<{ kind: string; name: string; namespace: string }>): void {
+    if (resources.length === 0) return
+    blank()
+    console.log(chalk.yellow('[WARN] Cleanup incomplete â€” delete these resources manually:'))
+    for (const r of resources) {
+        indent(`kubectl delete ${r.kind.toLowerCase()} ${r.name} -n ${r.namespace}`)
+    }
 }
 
 /**

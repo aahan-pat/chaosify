@@ -12,4 +12,6 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"production"',
   },
+  // Copy scenario YAML files so the built binary can load them at runtime.
+  copy: [{ from: 'src/scenarios', to: 'scenarios' }],
 })

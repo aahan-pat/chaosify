@@ -1,29 +1,29 @@
-// Implements "chaosclaw recon init" — creates the chaosclaw namespace and applies RBAC scoping.
-import type {Command} from 'commander'
+// Implements "chaosclaw setup init" — creates the chaosclaw namespace and applies RBAC scoping.
+import type { Command } from 'commander'
 import chalk from 'chalk'
-import {initNamespace, type InitResult} from '../../../core/recon/init.js'
-import {header, field, section, indent, blank, badge} from '../../output.js'
-import {buildKubeConfig, DEFAULT_RECON_NAMESPACE} from './utils/shared.js'
+import { initNamespace, type InitResult } from '../../../core/setup/init.js'
+import { header, field, section, indent, blank, badge } from '../../output.js'
+import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from '../recon/utils/shared.js'
 
 /**
- * Attaches the "init" subcommand to the recon command group.
- * @param recon The recon command group to attach to.
+ * Attaches the "init" subcommand to the setup command group.
+ * @param setup The setup command group to attach to.
  */
-export function init(recon: Command): void {
-    recon
+export function init(setup: Command): void {
+    setup
         .command('init')
         .description('Initialize the chaosclaw test namespace with RBAC scoping and resource quota')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Test namespace name', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .action(async (opts: { context?: string; namespace: string; format: string }) => {
-            const {kc, clusterContext} = buildKubeConfig(opts.context)
+            const { kc, clusterContext } = buildKubeConfig(opts.context)
 
             let result: InitResult
             try {
-                result = await initNamespace(kc, {namespace: opts.namespace, context: opts.context})
+                result = await initNamespace(kc, { namespace: opts.namespace, context: opts.context })
             } catch (err) {
-                console.error(`\nError\n  Could not initialize recon namespace: ${err instanceof Error ? err.message : String(err)}`)
+                console.error(`\nError\n  Could not initialize namespace: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
             }
 
@@ -33,7 +33,7 @@ export function init(recon: Command): void {
                 process.exit(result.steps.some(s => s.status === 'failed') ? 2 : 0)
             }
 
-            header('ChaosClaw Recon — Namespace Init')
+            header('ChaosClaw Setup — Namespace Init')
             field('Cluster Context', clusterContext)
             field('Namespace', opts.namespace)
 

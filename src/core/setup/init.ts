@@ -30,7 +30,7 @@ async function applyQuota(core: k8s.CoreV1Api, namespace: string): Promise<void>
 /**
  * Creates the chaosclaw namespace and applies RBAC scoping. Idempotent.
  * @param kc Loaded kubeconfig to use for all API calls.
- * @param options Recon options containing namespace and optional context.
+ * @param options Options containing namespace and optional context.
  */
 export async function initNamespace(kc: k8s.KubeConfig, options: ReconOptions): Promise<InitResult> {
     const ns = options.namespace

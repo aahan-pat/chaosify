@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { EvidenceBuilder } from '../../../src/core/evidence-builder.js'
+import { EvidenceBuilder } from '../../../src/core/teardown/evidence-builder.js'
 import type { ScenarioResult } from '../../../src/types/evidence.js'
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ValidationEngine } from '../../../src/core/validator.js'
+import { ValidationEngine } from '../../../src/core/validation/validator.js'
 import type { ScenarioDefinition } from '../../../src/types/scenario.js'
-import type { ExecutionResult } from '../../../src/core/executor.js'
+import type { ExecutionResult } from '../../../src/core/scenarios/exec/executor.js'
 
 // ---------------------------------------------------------------------------
 // Fixtures

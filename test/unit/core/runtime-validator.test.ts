@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { RuntimeValidationEngine } from '../../../src/core/runtime-validator.js'
+import { RuntimeValidationEngine } from '../../../src/core/validation/runtime-validator.js'
 import type { RuntimeScenarioDefinition } from '../../../src/types/runtime-scenario.js'
-import type { RuntimeExecutionResult } from '../../../src/core/runtime-executor.js'
+import type { RuntimeExecutionResult } from '../../../src/core/scenarios/exec/runtime-executor.js'
 
 // ---------------------------------------------------------------------------
 // Fixtures

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ScenarioRegistry } from '../../../src/core/registry.js'
+import { ScenarioRegistry } from '../../../src/core/scenarios/registry.js'
 import type { ScenarioDefinition, ScenarioPack } from '../../../src/types/scenario.js'
 
 // ---------------------------------------------------------------------------

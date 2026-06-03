@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
-import { RuntimeScenarioExecutor } from '../../src/core/runtime-executor.js'
-import type { RuntimeAlertSource, RuntimeAlert } from '../../src/core/runtime-executor.js'
+import { RuntimeScenarioExecutor } from '../../src/core/scenarios/exec/runtime-executor.js'
+import type { RuntimeAlertSource, RuntimeAlert } from '../../src/core/scenarios/exec/runtime-executor.js'
 import type { RuntimeScenarioDefinition } from '../../src/types/runtime-scenario.js'
 
 // ---------------------------------------------------------------------------

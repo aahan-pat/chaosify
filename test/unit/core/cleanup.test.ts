@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
-import { CleanupManager } from '../../../src/core/cleanup.js'
-import type { CleanupTarget } from '../../../src/core/cleanup.js'
+import { CleanupManager } from '../../../src/core/teardown/cleanup.js'
+import type { CleanupTarget } from '../../../src/core/teardown/cleanup.js'
 
 // ---------------------------------------------------------------------------
 // Helpers

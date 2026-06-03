@@ -6,6 +6,8 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   dts: false,
+  // Use .js extension so npm accepts it as a valid bin entry (package.json has "type":"module").
+  outExtensions: () => ({ js: '.js' }),
   banner: {
     js: '#!/usr/bin/env node',
   },
@@ -13,5 +15,5 @@ export default defineConfig({
     'process.env.NODE_ENV': '"production"',
   },
   // Copy scenario YAML files so the built binary can load them at runtime.
-  copy: [{ from: 'src/scenarios', to: 'scenarios' }],
+  copy: [{ from: 'src/scenarios', to: 'dist' }],
 })

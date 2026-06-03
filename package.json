@@ -1,6 +1,6 @@
 {
   "name": "chaosclaw",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic CLI for Kubernetes Continuous Control Verification",
   "keywords": [
     "kubernetes",
@@ -12,16 +12,15 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chaosclaw/chaosclaw.git"
+    "url": "git+https://github.com/aahan-pat/chaosclaw.git"
   },
   "type": "module",
   "bin": {
-    "chaosclaw": "./dist/index.mjs"
+    "chaosclaw": "./dist/index.js"
   },
   "files": [
     "dist/",
-    "README.md",
-    "CHANGELOG.md"
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",

@@ -1,6 +1,5 @@
-import chalk from 'chalk'
 import type { ScenarioResult } from '../../../../types/evidence.js'
-import { blank, indent, outcomeLabel, section } from '../../../output.js'
+import { indent, outcomeLabel, printCleanupWarning } from '../../../output.js'
 import { isRuntimeScenario } from './resolve.js'
 import type { AnyScenario } from './resolve.js'
 import type { RunContext } from './run-context.js'
@@ -70,7 +69,7 @@ async function executeOne(
             ? [{ kind: 'Pod' as const, name: execution.createdResourceName, namespace }]
             : []
         const cleanupResult = await processCleanup(ctx, createdResources, opts.cleanup, validation.status)
-        printCleanupWarning(cleanupResult)
+        printCleanupWarning(cleanupResult.remainingResources)
         return {
             scenarioId: scenario.id,
             version: scenario.version,
@@ -93,7 +92,7 @@ async function executeOne(
         ? [{ kind: 'Pod' as const, name: execution.createdResourceName, namespace }]
         : []
     const cleanupResult = await processCleanup(ctx, createdResources, opts.cleanup, validation.status)
-    printCleanupWarning(cleanupResult)
+    printCleanupWarning(cleanupResult.remainingResources)
     return {
         scenarioId: scenario.id,
         version: scenario.version,
@@ -121,17 +120,3 @@ async function processCleanup(
         : Promise.resolve({ status: 'skipped' as const, remainingResources: [] })
 }
 
-// Local cleanup warning for run-scenarios â€” includes a Details/Next breakdown for better operator guidance.
-function printCleanupWarning(cleanupResult: { remainingResources: Array<{ kind: string; name: string; namespace: string }> }): void {
-    if (cleanupResult.remainingResources.length === 0) return
-    blank()
-    console.log(chalk.yellow('[WARN] Cleanup incomplete'))
-    section('Details')
-    for (const r of cleanupResult.remainingResources) {
-        indent(`${r.kind} ${r.name} could not be deleted automatically`)
-    }
-    section('Next')
-    for (const r of cleanupResult.remainingResources) {
-        indent(`kubectl delete ${r.kind.toLowerCase()} ${r.name} -n ${r.namespace}`)
-    }
-}

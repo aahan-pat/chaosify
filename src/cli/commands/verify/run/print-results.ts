@@ -18,7 +18,7 @@ export function printHeader(
         verbose?: boolean
     }
 ): void {
-    header('ChaosClaw Verification Run')
+    header('ChaosClaw Probe Run')
     field('Cluster Context', clusterContext)
     if (opts.pack) field('Scenario Pack', opts.pack)
     if (opts.scenario) field('Scenario', opts.scenario)

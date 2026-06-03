@@ -1,4 +1,4 @@
-// Implements "chaosclaw verify identity" â€” the RBAC capability primitive.
+// Implements “chaosclaw probe identity” — the RBAC capability primitive.
 // Tests what a specific service account is actually authorized to do by issuing
 // a SubjectAccessReview against the Kubernetes API.
 // No pod is created; this is a pure API call. Runtime detection does not apply.
@@ -7,17 +7,17 @@ import type { Command } from 'commander'
 import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import { header, field, section, indent, outcomeLabel, blank } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_VERIFY_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
 
 const VALID_EXPECTS = ['allowed', 'denied'] as const
 type IdentityExpect = (typeof VALID_EXPECTS)[number]
 
 /**
- * Attaches the "identity" subcommand to the verify command group.
- * @param verify The verify command group to attach to.
+ * Attaches the "identity" subcommand to the probe command group.
+ * @param probe The probe command group to attach to.
  */
-export function identity(verify: Command): void {
-    verify
+export function identity(probe: Command): void {
+    probe
         .command('identity')
         .description('Test what a service account is authorized to do via SubjectAccessReview')
         .requiredOption('--as <sa-name>', 'Service account name to test')
@@ -27,7 +27,7 @@ export function identity(verify: Command): void {
         .option('--group <api-group>', 'API group of the resource (default: "" for core resources; use rbac.authorization.k8s.io for RBAC resources)')
         .requiredOption('--expect <outcome>', 'Expected outcome: allowed, denied')
         .option('--context <name>', 'Kubernetes context to use')
-        .option('--namespace <name>', 'Namespace the service account lives in', DEFAULT_VERIFY_NAMESPACE)
+        .option('--namespace <name>', 'Namespace the service account lives in', DEFAULT_PROBE_NAMESPACE)
         .option('--output <path>', 'Write JSON evidence artifact to file')
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .action(async (opts: {

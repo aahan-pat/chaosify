@@ -94,7 +94,12 @@ export function printAlertSection(alert: { source: string; ruleName: string; pod
 export function printCleanupWarning(resources: Array<{ kind: string; name: string; namespace: string }>): void {
     if (resources.length === 0) return
     blank()
-    console.log(chalk.yellow('[WARN] Cleanup incomplete â€” delete these resources manually:'))
+    console.log(chalk.yellow('[WARN] Cleanup incomplete'))
+    section('Details')
+    for (const r of resources) {
+        indent(`${r.kind} ${r.name} could not be deleted automatically`)
+    }
+    section('Next')
     for (const r of resources) {
         indent(`kubectl delete ${r.kind.toLowerCase()} ${r.name} -n ${r.namespace}`)
     }

@@ -7,15 +7,15 @@ import { loadManifestScenario } from './manifest.js'
 import { buildRunContext } from './run-context.js'
 import { runScenarios } from './run-scenarios.js'
 import { printHeader, printSummary } from './print-results.js'
-import { DEFAULT_VERIFY_NAMESPACE } from '../utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from '../utils/shared.js'
 
 /**
- * Attaches the "run" subcommand to the verify command group.
+ * Attaches the "run" subcommand to the probe command group.
  * Exactly one of --pack, --scenario, or --manifest must be provided.
  * Exit codes: 0 = all pass, 1 = failures, 2 = execution error, 4 = invalid args.
  */
-export function run(verify: Command): void {
-    verify
+export function run(probe: Command): void {
+    probe
         .command('run')
         .description('Run verification scenarios against the target cluster')
         .option('--pack <id>', 'Scenario pack to run')
@@ -23,7 +23,7 @@ export function run(verify: Command): void {
         .option('--manifest <path>', 'Path to a Pod manifest file (YAML or JSON) to test against the cluster')
         .option('--expect <outcome>', 'Expected admission outcome when using --manifest: rejected or allowed')
         .option('--context <name>', 'Kubernetes context to use')
-        .option('--namespace <name>', 'Test namespace', DEFAULT_VERIFY_NAMESPACE)
+        .option('--namespace <name>', 'Test namespace', DEFAULT_PROBE_NAMESPACE)
         .option('--alert-source <tool>', 'Runtime alert source: none (default), falco, tetragon, kubearmor', 'none')
         .option('--output <path>', 'Write JSON evidence artifact to file')
         .option('--format <mode>', 'Output mode: table, json', 'table')

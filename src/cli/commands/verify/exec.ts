@@ -1,4 +1,4 @@
-// Implements "chaosclaw verify exec" â€” the runtime binary execution primitive.
+// Implements “chaosclaw probe exec” — the runtime binary execution primitive.
 // Submits a pod, execs a command inside it, captures exit code + stdout + stderr,
 // and optionally polls a runtime detection tool for a correlated alert.
 import { basename } from 'node:path'
@@ -12,7 +12,7 @@ import { CleanupManager } from '../../../core/teardown/cleanup.js'
 import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import { header, field, section, indent, outcomeLabel, blank, printAlertSection, printCleanupWarning } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_VERIFY_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
 
 const DEFAULT_POD_TIMEOUT_S = 60
 const DEFAULT_EXEC_TIMEOUT_S = 30
@@ -22,11 +22,11 @@ const VALID_EXPECTS = ['succeeded', 'failed', 'denied'] as const
 type ExecExpect = (typeof VALID_EXPECTS)[number]
 
 /**
- * Attaches the "exec" subcommand to the verify command group.
- * @param verify The verify command group to attach to.
+ * Attaches the "exec" subcommand to the probe command group.
+ * @param probe The probe command group to attach to.
  */
-export function exec(verify: Command): void {
-    verify
+export function exec(probe: Command): void {
+    probe
         .command('exec')
         .description('Submit a pod, exec a command inside it, and verify the outcome')
         .requiredOption('--pod <path>', 'Pod manifest to submit (YAML or JSON)')
@@ -38,7 +38,7 @@ export function exec(verify: Command): void {
         .option('--pod-timeout <seconds>', `Max wait for pod Running (default: ${DEFAULT_POD_TIMEOUT_S})`, String(DEFAULT_POD_TIMEOUT_S))
         .option('--exec-timeout <seconds>', `Max time for the command (default: ${DEFAULT_EXEC_TIMEOUT_S})`, String(DEFAULT_EXEC_TIMEOUT_S))
         .option('--context <name>', 'Kubernetes context to use')
-        .option('--namespace <name>', 'Test namespace', DEFAULT_VERIFY_NAMESPACE)
+        .option('--namespace <name>', 'Test namespace', DEFAULT_PROBE_NAMESPACE)
         .option('--output <path>', 'Write JSON evidence artifact to file')
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .option('--cleanup <mode>', 'Cleanup mode: always, on-success', 'always')
@@ -82,8 +82,8 @@ export function exec(verify: Command): void {
             const command = opts.run.split(' ')
             const alertSource = buildAlertSource(opts.alertSource, kc)
             const cleanup = new CleanupManager(kc)
-            const builder = new EvidenceBuilder({ clusterContext, startedAt: new Date().toISOString() })
             const startedAt = new Date().toISOString()
+            const builder = new EvidenceBuilder({ clusterContext, startedAt })
             // Build a unique scenario ID from the manifest filename so evidence artifacts are traceable.
             const scenarioId = `exec:${basename(opts.pod)}`
 

@@ -1,6 +1,8 @@
 import { Command } from 'commander'
 import { init } from './commands/setup/init.js'
 import { cleanup } from './commands/setup/cleanup.js'
+import { list } from './commands/scenarios/list.js'
+import { show } from './commands/scenarios/show.js'
 import { preflight } from './commands/verify/preflight.js'
 import { exec } from './commands/verify/exec.js'
 import { network } from './commands/verify/network.js'
@@ -53,17 +55,25 @@ export class Registry {
         registry.register(setup, init)
         registry.register(setup, cleanup)
 
-        // Register verify commands.
-        const verify = program
-            .command('verify')
-            .description('Run security verification scenarios against the cluster')
+        // Register scenarios commands.
+        const scenarios = program
+            .command('scenarios')
+            .description('Discover and inspect available scenario packs and scenarios')
 
-        registry.register(verify, preflight)
-        registry.register(verify, run)
-        registry.register(verify, exec)
-        registry.register(verify, network)
-        registry.register(verify, detect)
-        registry.register(verify, identity)
+        registry.register(scenarios, list)
+        registry.register(scenarios, show)
+
+        // Register probe commands.
+        const probe = program
+            .command('probe')
+            .description('Execute attack primitives and scenario packs against the cluster')
+
+        registry.register(probe, preflight)
+        registry.register(probe, run)
+        registry.register(probe, exec)
+        registry.register(probe, network)
+        registry.register(probe, detect)
+        registry.register(probe, identity)
 
         // Register recon commands.
         const recon = program

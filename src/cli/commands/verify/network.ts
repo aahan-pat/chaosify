@@ -1,9 +1,9 @@
-// Implements "chaosclaw verify network" â€” the reachability primitive.
+// Implements “chaosclaw probe network” — the reachability primitive.
 // Submits a pod, probes a target endpoint from inside it, and reports whether
 // the target was reachable. Optionally polls a runtime detection tool.
 //
 // The pod image must include the probe tool for the chosen protocol:
-//   http/https â†’ curl    tcp â†’ nc (netcat)
+//   http/https → curl    tcp → nc (netcat)
 import { basename } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -15,7 +15,7 @@ import { CleanupManager } from '../../../core/teardown/cleanup.js'
 import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import { header, field, section, indent, outcomeLabel, blank, printAlertSection, printCleanupWarning } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_VERIFY_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
 
 const DEFAULT_POD_TIMEOUT_S = 60
 const DEFAULT_CONNECT_TIMEOUT_S = 5
@@ -28,11 +28,11 @@ const VALID_EXPECTS = ['reachable', 'unreachable'] as const
 type NetworkExpect = (typeof VALID_EXPECTS)[number]
 
 /**
- * Attaches the "network" subcommand to the verify command group.
- * @param verify The verify command group to attach to.
+ * Attaches the "network" subcommand to the probe command group.
+ * @param probe The probe command group to attach to.
  */
-export function network(verify: Command): void {
-    verify
+export function network(probe: Command): void {
+    probe
         .command('network')
         .description('Submit a pod and probe a target endpoint from inside it')
         .requiredOption('--from <path>', 'Pod manifest to use as the network source (YAML or JSON)')
@@ -45,7 +45,7 @@ export function network(verify: Command): void {
         .option('--connect-timeout <seconds>', `TCP connect timeout for the probe (default: ${DEFAULT_CONNECT_TIMEOUT_S})`, String(DEFAULT_CONNECT_TIMEOUT_S))
         .option('--pod-timeout <seconds>', `Max wait for pod Running (default: ${DEFAULT_POD_TIMEOUT_S})`, String(DEFAULT_POD_TIMEOUT_S))
         .option('--context <name>', 'Kubernetes context to use')
-        .option('--namespace <name>', 'Test namespace', DEFAULT_VERIFY_NAMESPACE)
+        .option('--namespace <name>', 'Test namespace', DEFAULT_PROBE_NAMESPACE)
         .option('--output <path>', 'Write JSON evidence artifact to file')
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .option('--cleanup <mode>', 'Cleanup mode: always, on-success', 'always')
@@ -98,8 +98,8 @@ export function network(verify: Command): void {
             const execTimeoutMs = (connectTimeoutS + 5) * 1_000
             const alertSource = buildAlertSource(opts.alertSource, kc)
             const cleanup = new CleanupManager(kc)
-            const builder = new EvidenceBuilder({ clusterContext, startedAt: new Date().toISOString() })
             const startedAt = new Date().toISOString()
+            const builder = new EvidenceBuilder({ clusterContext, startedAt })
             // Encode source pod and target in the scenario ID for a human-readable evidence trail.
             const scenarioId = `network:${basename(opts.from)}â†’${opts.target}`
 

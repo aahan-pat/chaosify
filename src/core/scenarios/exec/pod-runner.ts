@@ -1,4 +1,4 @@
-// Low-level utilities shared by verify exec, verify network, and verify detect.
+// Low-level utilities shared by probe exec, probe network, and probe detect.
 // Handles pod lifecycle (submit, wait, exec with output capture) independently
 // of any scenario schema or alert observation logic.
 import * as k8s from '@kubernetes/client-node'

@@ -32,21 +32,11 @@ export async function teardownNamespace(kc: k8s.KubeConfig, options: ReconOption
 
     // Delete namespace-scoped resources in reverse-init order, then delete the namespace itself.
     const steps: Step[] = [
-        await runStep('RoleBinding chaosclaw-runner', () =>
-            deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: 'chaosclaw-runner', namespace: ns }))
-        ),
-        await runStep('Role chaosclaw-runner', () =>
-            deleteIfExists(() => rbac.deleteNamespacedRole({ name: 'chaosclaw-runner', namespace: ns }))
-        ),
-        await runStep('ServiceAccount chaosclaw-runner', () =>
-            deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: 'chaosclaw-runner', namespace: ns }))
-        ),
-        await runStep('ResourceQuota chaosclaw-quota', () =>
-            deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: 'chaosclaw-quota', namespace: ns }))
-        ),
-        await runStep(`Namespace ${ns}`, () =>
-            deleteIfExists(() => core.deleteNamespace({ name: ns }))
-        ),
+        await runStep('RoleBinding chaosclaw-runner', () => deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: 'chaosclaw-runner', namespace: ns }))),
+        await runStep('Role chaosclaw-runner', () => deleteIfExists(() => rbac.deleteNamespacedRole({ name: 'chaosclaw-runner', namespace: ns }))),
+        await runStep('ServiceAccount chaosclaw-runner', () => deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: 'chaosclaw-runner', namespace: ns }))),
+        await runStep('ResourceQuota chaosclaw-quota', () => deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: 'chaosclaw-quota', namespace: ns }))),
+        await runStep(`Namespace ${ns}`, () => deleteIfExists(() => core.deleteNamespace({ name: ns }))),
     ]
 
     return { clusterContext: kc.getCurrentContext(), namespace: ns, steps }

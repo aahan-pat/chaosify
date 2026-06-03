@@ -36,20 +36,15 @@ Ask the user which Kubernetes context to use if not already known. Run `kubectl 
 **Step 2 — Initialize the test namespace (first run only).**
 If this is the first time running against this cluster, initialize the `chaosclaw` namespace:
 ```bash
-chaosclaw recon init --context <context-name>
+chaosclaw setup init --context <context-name>
 ```
-See `references/cli-reference.md` §Recon commands. Skip if the user confirms it already exists.
+See `references/cli-reference.md` §Setup. Skip if the user confirms it already exists.
 
 **Step 2.5 — Run topology recon (if graphnetes is installed).**
-Check whether graphnetes is on PATH:
-```bash
-where graphnetes
-```
-If found (regardless of exit code from `graphnetes version`), run topology for the `chaosclaw` namespace before executing scenarios:
 ```bash
 chaosclaw recon topology --context <context-name> --namespace chaosclaw --output topology.json
 ```
-Read the output. Use `secretMounts`, `ingressPaths`, and `serviceAccountBindings` to surface high-value targets and inform which scenarios or `--manifest` test cases to prioritize.
+If graphnetes is not installed the command returns `status: skip` — continue to Step 3. If it succeeds, read `topology.json`. Use `data.stats.secretMounts`, `data.stats.ingressPaths`, and `data.stats.serviceAccountBindings` to identify high-value targets and inform which scenarios or `--manifest` test cases to prioritize.
 
 **Step 3 — Run preflight.**
 See `references/cli-reference.md` §Preflight for the command and how to handle each outcome.

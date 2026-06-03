@@ -1,5 +1,5 @@
 import { spawn, type SpawnOptions } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import type { ReconOptions, ReconToolResult } from '../../types/recon.js'
 
 const GRAPH_DIR = 'graphnetes-out'
@@ -93,7 +93,5 @@ export async function surveyTopology(
         return { tool: 'topology', status: 'error', findings: [], data: { error: `graphnetes exited successfully but ${GRAPH_PATH} was not created` } }
     }
 
-    // Enumerate all files written to graphnetes-out/ so the CLI can surface them as artifacts.
-    const artifacts = readdirSync(GRAPH_DIR).map(f => `${GRAPH_DIR}/${f}`)
-    return { tool: 'topology', status: 'ok', findings: [], data: { artifacts } }
+    return { tool: 'topology', status: 'ok', findings: [], data: { graphPath: GRAPH_PATH } }
 }

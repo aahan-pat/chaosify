@@ -41,23 +41,19 @@ Ask which Kubernetes context to use if not specified. Run `kubectl config get-co
 
 **Step 2 — Initialize the test namespace (first run only).**
 ```bash
-chaosclaw recon init --context <context-name>
+chaosclaw setup init --context <context-name>
 ```
 Skip if the user confirms it already exists.
 
 **Step 2.5 — Run topology recon (if graphnetes is installed).**
 ```bash
-where graphnetes
-```
-If found (regardless of exit code from `graphnetes version`), run topology for the `chaosclaw` namespace before executing scenarios:
-```bash
 chaosclaw recon topology --context <context-name> --namespace chaosclaw --output topology.json
 ```
-Read the output. Use `secretMounts`, `ingressPaths`, and `serviceAccountBindings` to surface high-value targets and inform which scenarios or `--manifest` test cases to prioritize.
+If graphnetes is not installed the command returns `status: skip` — continue to Step 3. If it succeeds, read `topology.json`. Use `data.stats.secretMounts`, `data.stats.ingressPaths`, and `data.stats.serviceAccountBindings` to surface high-value targets and inform which scenarios or `--manifest` test cases to prioritize.
 
 **Step 3 — Run preflight.**
 ```bash
-chaosclaw verify preflight --context <context-name>
+chaosclaw probe preflight --context <context-name>
 ```
 
 | Outcome | Action |
@@ -70,16 +66,16 @@ chaosclaw verify preflight --context <context-name>
 **Step 4 — Run the pack or scenario.**
 ```bash
 # Full preventive baseline
-chaosclaw verify run --pack preventive-baseline --context <context-name> --output chaosclaw-result.json
+chaosclaw probe run --pack preventive-baseline --context <context-name> --output chaosclaw-result.json
 
 # Runtime baseline (requires alert source)
-chaosclaw verify run --pack runtime-baseline --alert-source <falco|tetragon|kubearmor|none> --context <context-name> --output chaosclaw-runtime.json
+chaosclaw probe run --pack runtime-baseline --alert-source <falco|tetragon|kubearmor|none> --context <context-name> --output chaosclaw-runtime.json
 
 # Single scenario
-chaosclaw verify run --scenario <scenario-id> --context <context-name>
+chaosclaw probe run --scenario <scenario-id> --context <context-name>
 
 # Arbitrary manifest
-chaosclaw verify run --manifest <path> --expect <rejected|allowed> --context <context-name>
+chaosclaw probe run --manifest <path> --expect <rejected|allowed> --context <context-name>
 ```
 
 **Step 5 — Parse and summarize results.**
@@ -112,25 +108,27 @@ State the target cluster explicitly. Ask the user to confirm.
 
 **Step 2 — Initialize the test namespace.**
 ```bash
-chaosclaw recon init --context <context-name>
+chaosclaw setup init --context <context-name>
 ```
 If init fails, surface the error and stop.
 
 **Step 3 — Run topology recon (if graphnetes is installed).**
 ```bash
-where graphnetes
-```
-If found (regardless of exit code from `graphnetes version`), run topology for the `chaosclaw` namespace and any other namespaces of interest before the full recon survey:
-```bash
 chaosclaw recon topology --context <context-name> --namespace <ns> --output topology-<ns>.json
 ```
-Run one call per namespace of interest. Read all `topology-*.json` before proceeding — topology findings inform which gaps to prioritize in Step 6.
+Run one call per namespace of interest. If graphnetes is not installed the command returns `status: skip` — continue to Step 4. If it succeeds, read all `topology-*.json` before proceeding.
 
 **Step 4 — Run the full recon survey.**
 ```bash
-chaosclaw recon all --context <context-name> --output recon.json
+chaosclaw recon webhooks         --context <context-name> --output recon-webhooks.json --format json
+chaosclaw recon policies         --context <context-name> --output recon-policies.json --format json
+chaosclaw recon psa              --context <context-name> --output recon-psa.json      --format json
+chaosclaw recon rbac             --context <context-name> --output recon-rbac.json     --format json
+chaosclaw recon nodes            --context <context-name> --output recon-nodes.json    --format json
+chaosclaw recon network-policies --context <context-name> --output recon-netpol.json  --format json
+chaosclaw recon runtime-agents   --context <context-name> --output recon-agents.json  --format json
 ```
-Read `recon.json` alongside any `topology-*.json` files from Step 3 before proceeding.
+Read all output files alongside any `topology-*.json` files from Step 3 before proceeding.
 
 **Step 5 — Analyze the recon report.**
 For each tool's findings, determine:
@@ -145,7 +143,7 @@ Store the alert source now. Use it consistently for all Step 6 calls.
 
 ```bash
 # RBAC over-privilege — one call per flagged SA
-chaosclaw verify identity \
+chaosclaw probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \
@@ -155,7 +153,7 @@ chaosclaw verify identity \
   --output identity-<sa>.json
 
 # Network segmentation gap — one call per flagged namespace/target
-chaosclaw verify network \
+chaosclaw probe network \
   --from <probe-pod.yaml> \
   --target <url-or-host:port> \
   --expect unreachable \
@@ -164,7 +162,7 @@ chaosclaw verify network \
   --output network-<target>.json
 
 # Exec-based attack path (escape, token theft, etc.)
-chaosclaw verify exec \
+chaosclaw probe exec \
   --pod <pod.yaml> \
   --run "<command>" \
   --expect <succeeded|failed|denied> \
@@ -173,7 +171,7 @@ chaosclaw verify exec \
   --output exec-<name>.json
 
 # Runtime detection gap
-chaosclaw verify detect \
+chaosclaw probe detect \
   --pod <pod.yaml> \
   --run "<threat-command>" \
   --expect <alert_fired|action_blocked|no_alert> \
@@ -183,25 +181,25 @@ chaosclaw verify detect \
   --output detect-<name>.json
 ```
 
-Run `verify detect` after every `verify exec` that succeeds — this separates "can the attacker do it" from "does the defender see it".
+Run `probe detect` after every `probe exec` that succeeds — this separates "can the attacker do it" from "does the defender see it".
 
 **Recon signal → primitive mapping:**
 
 | Recon signal | Primitive | What to test |
 |---|---|---|
-| Fail-open webhook (`failurePolicy: Ignore`) | `verify network` | Probe API server — confirm bypass window |
-| Policy in Audit mode | `verify exec` | Confirm action succeeds (Audit doesn't block) |
-| No PSA on a namespace | `verify exec` | Run privileged command — confirm no enforcement |
-| Non-built-in cluster-admin SA | `verify identity` | Prove SA can list secrets, create pods in production namespaces |
-| High-privilege SA | `verify identity` | Prove specific dangerous permissions |
-| No egress NetworkPolicy | `verify network` | Probe metadata service, etcd, kubelet, cross-namespace pods |
+| Fail-open webhook (`failurePolicy: Ignore`) | `probe network` | Probe API server — confirm bypass window |
+| Policy in Audit mode | `probe exec` | Confirm action succeeds (Audit doesn't block) |
+| No PSA on a namespace | `probe exec` | Run privileged command — confirm no enforcement |
+| Non-built-in cluster-admin SA | `probe identity` | Prove SA can list secrets, create pods in production namespaces |
+| High-privilege SA | `probe identity` | Prove specific dangerous permissions |
+| No egress NetworkPolicy | `probe network` | Probe metadata service, etcd, kubelet, cross-namespace pods |
 | Runtime agent absent | `verify exec --alert-source none` | Confirm exec succeeds — detection layer absent |
 | Runtime agent present | `verify exec --alert-source <tool>` | Confirm exec AND check if tool fires |
-| Runtime agent present | `verify detect` | Test whether tool fires on specific threat commands |
-| Old kernel / no AppArmor | `verify exec` | Test escape techniques (nsenter, chroot) |
-| Topology: `secretMounts` present | `verify exec` | Exec into Pod, read the secret path — confirm credential accessible |
-| Topology: `ingressPaths` present | `verify network` | Probe backend Service — confirm exposure and NetworkPolicy coverage |
-| Topology: `serviceAccountBindings` + RBAC HIGH SA | `verify identity` | Confirm per-Pod attack path for that SA |
+| Runtime agent present | `probe detect` | Test whether tool fires on specific threat commands |
+| Old kernel / no AppArmor | `probe exec` | Test escape techniques (nsenter, chroot) |
+| Topology: `secretMounts` present | `probe exec` | Exec into Pod, read the secret path — confirm credential accessible |
+| Topology: `ingressPaths` present | `probe network` | Probe backend Service — confirm exposure and NetworkPolicy coverage |
+| Topology: `serviceAccountBindings` + RBAC HIGH SA | `probe identity` | Confirm per-Pod attack path for that SA |
 
 **Step 7 — Correlate and report.**
 Apply the correlation rules in §Correlation and produce the report using §Report Structure.
@@ -216,11 +214,16 @@ After the report:
 
 ## CLI Reference
 
+### Setup commands
+
+```bash
+chaosclaw setup init    --context <ctx>
+chaosclaw setup cleanup --context <ctx>
+```
+
 ### Recon commands
 
 ```bash
-chaosclaw recon init              --context <ctx>
-chaosclaw recon all               --context <ctx> --output recon.json [--skip <tools>] [--include-system] [--format json]
 chaosclaw recon webhooks          --context <ctx>
 chaosclaw recon policies          --context <ctx>
 chaosclaw recon psa               --context <ctx>
@@ -238,7 +241,7 @@ Recon finding severities: `CRITICAL` / `HIGH` / `WARN` / `INFO` / `SKIP`
 ### Identity command
 
 ```bash
-chaosclaw verify identity \
+chaosclaw probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \          # use slash notation for subresources: pods/exec
@@ -296,7 +299,7 @@ chaosclaw scenarios show <scenario-id>
 
 ### JSON artifact schema
 
-All `verify` commands produce the same evidence envelope:
+All `probe` commands produce the same evidence envelope:
 
 | Field | Description |
 |---|---|
@@ -365,11 +368,11 @@ Check `data.agents` from the `runtime-agents` recon output:
 
 ### Recon interpretation
 
-**webhooks:** `failurePolicy: Ignore` → run `verify network` to probe the API server. No validating webhooks → critical gap, record and continue.
+**webhooks:** `failurePolicy: Ignore` → run `probe network` to probe the API server. No validating webhooks → critical gap, record and continue.
 
-**policies:** No policy engine → critical gap. Policies in Audit mode → run `verify exec` for high-risk commands (Audit doesn't block). No findings → focus on runtime and RBAC.
+**policies:** No policy engine → critical gap. Policies in Audit mode → run `probe exec` for high-risk commands (Audit doesn't block). No findings → focus on runtime and RBAC.
 
-**psa:** Namespaces without PSA labels → run `verify exec` from a pod in that namespace.
+**psa:** Namespaces without PSA labels → run `probe exec` from a pod in that namespace.
 
 **rbac:** Non-built-in cluster-admin SA → `verify identity --as <sa> --can list --resource secrets --resource-namespace kube-system --expect denied`. Any High-privilege SA → `verify identity --can create --resource pods --resource-namespace <prod-ns> --expect denied`. A `Fail` (allowed when denied expected) = confirmed privilege escalation path → **High**.
 
@@ -379,7 +382,7 @@ Check `data.agents` from the `runtime-agents` recon output:
 
 **nodes:** Older kernel versions and absent AppArmor are informational defense-depth gaps. Not a decision gate.
 
-**topology:** If `status: skip` → note coverage gap, continue. If `status: ok`: `secretMounts` → `verify exec` to read the secret from inside the pod; `ingressPaths` → `verify network` to probe the backend Service; `serviceAccountBindings` + RBAC HIGH match → `verify identity` to confirm per-Pod path. Node IDs use `Kind/namespace/name` form.
+**topology:** If `status: skip` → note coverage gap, continue. If `status: ok`: `secretMounts` → `probe exec` to read the secret from inside the pod; `ingressPaths` → `probe network` to probe the backend Service; `serviceAccountBindings` + RBAC HIGH match → `probe identity` to confirm per-Pod path. Node IDs use `Kind/namespace/name` form.
 
 ### Correlation (pentest)
 
@@ -468,4 +471,4 @@ Overall posture: [Critical / High / Medium / Passing]
 - All execution is confined to the `chaosclaw` namespace — RBAC-bound, cannot affect other namespaces.
 - A pentest does not modify policies, webhooks, application workloads, or cluster config.
 - If cleanup reports a partial failure, surface the `kubectl delete` command before the next primitive.
-- `verify identity` requires `create subjectaccessreviews`. If denied (exit code 2), skip identity checks — do not treat as a control finding.
+- `probe identity` requires `create subjectaccessreviews`. If denied (exit code 2), skip identity checks — do not treat as a control finding.

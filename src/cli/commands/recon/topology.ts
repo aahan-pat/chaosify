@@ -60,10 +60,10 @@ export function topology(recon: Command): void {
             field('Namespace', opts.namespace)
             if (opts.graph) field('Graph Source', opts.graph)
 
-            const data = result.data as { artifacts?: string[] }
-            if (data.artifacts && data.artifacts.length > 0) {
-                section('Artifacts')
-                for (const f of data.artifacts) indent(f)
+            const data = result.data as { graphPath?: string }
+            if (data.graphPath) {
+                section('Graph')
+                indent(`Built: ${data.graphPath}`)
             }
 
             if (opts.output) {

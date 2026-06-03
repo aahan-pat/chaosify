@@ -3,7 +3,7 @@
 ## Preflight
 
 ```bash
-chaosclaw verify preflight --context <context-name>
+chaosclaw probe preflight --context <context-name>
 ```
 
 | Outcome | Action |
@@ -16,13 +16,13 @@ chaosclaw verify preflight --context <context-name>
 ## Run — Scenario Pack
 
 ```bash
-chaosclaw verify run \
+chaosclaw probe run \
   --pack <preventive-baseline|runtime-baseline> \
   --context <context-name> \
   --output chaosclaw-result.json
 
 # Runtime pack with a detection tool
-chaosclaw verify run \
+chaosclaw probe run \
   --pack runtime-baseline \
   --alert-source <falco|tetragon|kubearmor|none> \
   --context <context-name> \
@@ -32,13 +32,13 @@ chaosclaw verify run \
 ## Run — Single Scenario
 
 ```bash
-chaosclaw verify run --scenario <scenario-id> --context <context-name>
+chaosclaw probe run --scenario <scenario-id> --context <context-name>
 ```
 
 ## Run — Arbitrary Manifest
 
 ```bash
-chaosclaw verify run \
+chaosclaw probe run \
   --manifest <path> \
   --expect <rejected|allowed> \
   --context <context-name>
@@ -49,7 +49,7 @@ chaosclaw verify run \
 Submit a pod, exec a command, capture exit code + stdout + stderr.
 
 ```bash
-chaosclaw verify exec \
+chaosclaw probe exec \
   --pod <path> \
   --run "<command>" \
   --expect <succeeded|failed|denied> \
@@ -67,7 +67,7 @@ chaosclaw verify exec \
 ## Network — Reachability From Inside a Pod
 
 ```bash
-chaosclaw verify network \
+chaosclaw probe network \
   --from <pod.yaml> \
   --target <url|host:port> \
   --expect <reachable|unreachable> \
@@ -83,7 +83,7 @@ Protocol is inferred from the target (`http://` → http, `https://` → https, 
 Test what a service account is actually authorized to do. No pod created.
 
 ```bash
-chaosclaw verify identity \
+chaosclaw probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \
@@ -101,7 +101,7 @@ Use slash notation for subresources: `--resource pods/exec`. Use `--group rbac.a
 Submit a pod, exec a threat command, poll the runtime tool for a correlated alert.
 
 ```bash
-chaosclaw verify detect \
+chaosclaw probe detect \
   --pod <path> \
   --run "<threat-command>" \
   --expect <alert_fired|action_blocked|no_alert> \
@@ -118,18 +118,14 @@ The `recon` group surveys the cluster's security posture. All tools are read-onl
 ### Initialize test namespace
 
 ```bash
-chaosclaw recon init --context <context-name>
+chaosclaw setup init --context <context-name>
 ```
 
 Creates the `chaosclaw` namespace, `ResourceQuota`, `ServiceAccount` `chaosclaw-runner`, and a namespace-scoped `Role`/`RoleBinding`. Idempotent.
 
 ### Full survey
 
-```bash
-chaosclaw recon all --context <context-name> --output recon.json
-```
-
-Options: `--skip <tools>` (comma-separated), `--include-system` (RBAC), `--format json`.
+Run individual tools sequentially (see below). There is no `recon all` command — run each tool separately and collect results.
 
 ### Individual tools
 

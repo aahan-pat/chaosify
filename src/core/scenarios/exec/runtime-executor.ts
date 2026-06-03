@@ -128,7 +128,7 @@ export class RuntimeScenarioExecutor {
         let alert: RuntimeAlert | null = null
         let observeError: string | undefined
         try {
-            alert = await this.observeAlert(namespace, 'chaosclaw-test-', windowStart, observationWindowMs)
+            alert = await this.alertSource.pollForAlert(namespace, 'chaosclaw-test-', windowStart, observationWindowMs)
         } catch (err: unknown) {
             observeError = this.formatError(err)
         }
@@ -199,20 +199,6 @@ export class RuntimeScenarioExecutor {
                 reject(err instanceof Error ? err : new Error(String(err)))
             })
         })
-    }
-
-    /**
-     * Open the observation window and delegate to the alert source to poll for
-     * a correlated alert. Returns the alert if one arrives, or null if the window
-     * closes without a match.
-     */
-    private async observeAlert(
-        namespace: string,
-        podNamePrefix: string,
-        windowStart: string,
-        windowMs: number,
-    ): Promise<RuntimeAlert | null> {
-        return this.alertSource.pollForAlert(namespace, podNamePrefix, windowStart, windowMs)
     }
 
     /**

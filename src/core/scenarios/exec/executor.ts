@@ -2,6 +2,7 @@
 // response into a structured ObservedOutcome (allowed, rejected, timeout, or error).
 import * as k8s from '@kubernetes/client-node'
 import type { ScenarioDefinition } from '../../../types/scenario.js'
+import { injectNamespace } from './pod-runner.js'
 
 /** All possible outcomes that the Kubernetes API can produce for an apply attempt */
 export type ObservedOutcome = 'admission_rejected' | 'admission_allowed' | 'timeout' | 'api_error'
@@ -46,8 +47,7 @@ export class ScenarioExecutor {
      */
     async execute(scenario: ScenarioDefinition, options: ExecutorOptions): Promise<ExecutionResult> {
         const startedAt = new Date().toISOString()
-        // Override metadata so every test resource lands in the correct namespace.
-        const manifest = this.injectNamespace(scenario.manifest, options.namespace)
+        const manifest = injectNamespace(scenario.manifest, options.namespace)
         const manifestSnapshot = JSON.stringify(manifest)
 
         try {
@@ -103,18 +103,6 @@ export class ScenarioExecutor {
         }
 
         throw new Error(`Unsupported manifest kind: ${kind ?? 'unknown'}`)
-    }
-
-    /**
-     * Overwrites metadata fields so the manifest targets the correct test namespace.
-     * Uses generateName (rather than name) so concurrent test runs don't collide on resource names.
-     */
-    private injectNamespace(manifest: Record<string, unknown>, namespace: string): Record<string, unknown> {
-        const meta = manifest['metadata'] as Record<string, unknown> | undefined ?? {}
-        return {
-            ...manifest,
-            metadata: { ...meta, namespace, generateName: 'chaosclaw-test-', name: undefined },
-        }
     }
 
     /**

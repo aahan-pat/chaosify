@@ -12,10 +12,7 @@ Survey the cluster's security posture before submitting any test workloads. All 
 
 ```bash
 # Initialize test namespace with RBAC scoping and ResourceQuota
-chaosclaw recon init
-
-# Run all survey tools and write a ReconReport
-chaosclaw recon all --output recon.json
+chaosclaw setup init
 
 # Individual survey tools
 chaosclaw recon webhooks           # fail-open webhook detection
@@ -28,29 +25,29 @@ chaosclaw recon runtime-agents     # detect Falco, KubeArmor, Tetragon, Tracee
 chaosclaw recon topology           # resource topology graph: ingress paths, secret mounts, SA bindings (requires graphnetes)
 ```
 
-See [recon-design.md](recon-design.md) for flag details, finding severity vocabulary, and per-command output specs.
+All recon tools support `--output <file>` and `--format json`.
 
 ### Cluster readiness
 
 ```bash
-chaosclaw verify preflight
-chaosclaw verify preflight --context prod-us-east
-chaosclaw verify preflight --output json
+chaosclaw probe preflight
+chaosclaw probe preflight --context prod-us-east
+chaosclaw probe preflight --output json
 ```
 
 ### Verification — manifest admission
 
 ```bash
 # Built-in scenario packs
-chaosclaw verify run --pack preventive-baseline
-chaosclaw verify run --pack runtime-baseline --alert-source falco
-chaosclaw verify run --scenario deny-privileged-container
-chaosclaw verify run --pack preventive-baseline --context prod-us-east
-chaosclaw verify run --pack preventive-baseline --output result.json
+chaosclaw probe run --pack preventive-baseline
+chaosclaw probe run --pack runtime-baseline --alert-source falco
+chaosclaw probe run --scenario deny-privileged-container
+chaosclaw probe run --pack preventive-baseline --context prod-us-east
+chaosclaw probe run --pack preventive-baseline --output result.json
 
 # Arbitrary manifest (primary interface for OpenClaw)
-chaosclaw verify run --manifest ./my-pod.yaml --expect rejected
-chaosclaw verify run --manifest ./my-deployment.yaml --expect allowed
+chaosclaw probe run --manifest ./my-pod.yaml --expect rejected
+chaosclaw probe run --manifest ./my-deployment.yaml --expect allowed
 ```
 
 ### Verification — execution primitives
@@ -59,20 +56,20 @@ Four composable primitives for OpenClaw-driven free-form pentesting. OpenClaw ge
 
 ```bash
 # exec — create a pod, run a command inside it, capture exit code + stdout + stderr
-chaosclaw verify exec \
+chaosclaw probe exec \
   --pod ./probe.yaml \
   --run "cat /var/run/secrets/kubernetes.io/serviceaccount/token" \
   --expect succeeded \
   --alert-source falco
 
 # network — probe a target from inside a pod
-chaosclaw verify network \
+chaosclaw probe network \
   --from ./net-probe.yaml \
   --target http://169.254.169.254/latest/meta-data/ \
   --expect unreachable
 
 # identity — test what a service account is actually allowed to do
-chaosclaw verify identity \
+chaosclaw probe identity \
   --as default \
   --can list \
   --resource secrets \
@@ -80,7 +77,7 @@ chaosclaw verify identity \
   --expect denied
 
 # detect — exec a threat command and poll a runtime tool for a correlated alert
-chaosclaw verify detect \
+chaosclaw probe detect \
   --pod ./escape-probe.yaml \
   --run "nsenter --mount=/proc/1/ns/mnt -- cat /etc/shadow" \
   --expect alert_fired \
@@ -88,7 +85,7 @@ chaosclaw verify detect \
   --observation-window 15
 ```
 
-See [execution-layer-design.md](execution-layer-design.md) for full flag reference, evidence schema, and attack chain examples.
+See the skills in `skills/` for execution guidance and evidence schema.
 
 ### Scenario discovery
 
@@ -98,7 +95,7 @@ chaosclaw scenarios list --pack preventive-baseline
 chaosclaw scenarios show deny-privileged-container
 ```
 
-See [scenarios.md](scenarios.md) for the full scenario catalog with control objectives, FAIL explanations, and remediation guidance.
+See [scenarios.md](scenarios.md) for the full scenario catalog.
 
 ### Other
 
@@ -123,17 +120,17 @@ chaosclaw help
 | `--no-color` | Disable colorized output |
 | `--pack <id>` | Scenario pack to run |
 | `--scenario <id>` | Single scenario to run |
-| `--manifest <path>` | Manifest to submit (`verify run`) |
+| `--manifest <path>` | Manifest to submit (`probe run`) |
 | `--expect <outcome>` | Expected outcome for the test |
-| `--pod <path>` | Pod manifest (`verify exec`, `verify detect`) |
+| `--pod <path>` | Pod manifest (`probe exec`, `probe detect`) |
 | `--run "<cmd>"` | Command to exec inside the container |
 | `--container <name>` | Container to exec into (default: first) |
-| `--from <path>` | Source pod manifest (`verify network`) |
-| `--target <url\|host:port>` | Probe target (`verify network`) |
+| `--from <path>` | Source pod manifest (`probe network`) |
+| `--target <url\|host:port>` | Probe target (`probe network`) |
 | `--protocol <http\|https\|tcp>` | Network protocol (default: inferred) |
-| `--as <sa-name>` | Service account to test (`verify identity`) |
-| `--can <verb>` | RBAC verb to test (`verify identity`) |
-| `--resource <resource>` | Kubernetes resource to test (`verify identity`) |
+| `--as <sa-name>` | Service account to test (`probe identity`) |
+| `--can <verb>` | RBAC verb to test (`probe identity`) |
+| `--resource <resource>` | Kubernetes resource to test (`probe identity`) |
 | `--resource-namespace <ns>` | Namespace for the permission check |
 | `--graph <path>` | Path to existing `graphnetes-out/graph.json` — skips build step (`recon topology`) |
 | `--alert-source <tool>` | Runtime alert source: `none`, `falco`, `tetragon`, `kubearmor` |

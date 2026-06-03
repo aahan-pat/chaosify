@@ -17,10 +17,10 @@ chaosclaw scenarios list --pack preventive-baseline
 chaosclaw scenarios show deny-privileged-container
 
 # Run a full pack
-chaosclaw verify run --pack preventive-baseline --context <ctx> --output result.json
+chaosclaw probe run --pack preventive-baseline --context <ctx> --output result.json
 
 # Run a single scenario
-chaosclaw verify run --scenario deny-privileged-container --context <ctx>
+chaosclaw probe run --scenario deny-privileged-container --context <ctx>
 ```
 
 ## Result vocabulary
@@ -170,7 +170,7 @@ Tests whether runtime security tools detect known threat techniques. Each scenar
 **Prerequisites:** A runtime security tool (Falco, Tetragon, or KubeArmor) must be running on the cluster. Use `--alert-source <tool>` to specify which tool to poll. Use `--alert-source none` for pipeline testing without a live tool.
 
 ```bash
-chaosclaw verify run --pack runtime-baseline --alert-source falco --context <ctx>
+chaosclaw probe run --pack runtime-baseline --alert-source falco --context <ctx>
 ```
 
 ---

@@ -18,10 +18,16 @@ ChaosClaw was run against Kubernetes Goat deployed on a local minikube instance.
 
 ## Recon
 
-The first step was a full cluster survey using `chaosclaw recon all`. ChaosClaw surveyed eight dimensions — webhooks, policies, PSA, RBAC, nodes, network policies, runtime agents, and topology — and produced a `ReconReport` in under five seconds.
+The first step was a full cluster survey. ChaosClaw surveyed eight dimensions — webhooks, policies, PSA, RBAC, nodes, network policies, runtime agents, and topology — in under five seconds.
 
-```
-chaosclaw recon all --context minikube --output recon.json
+```bash
+chaosclaw recon webhooks         --context minikube --output recon-webhooks.json --format json
+chaosclaw recon policies         --context minikube --output recon-policies.json --format json
+chaosclaw recon psa              --context minikube --output recon-psa.json      --format json
+chaosclaw recon rbac             --context minikube --output recon-rbac.json     --format json
+chaosclaw recon nodes            --context minikube --output recon-nodes.json    --format json
+chaosclaw recon network-policies --context minikube --output recon-netpol.json  --format json
+chaosclaw recon runtime-agents   --context minikube --output recon-agents.json  --format json
 ```
 
 **Summary: 1 Critical, 3 High, 2 Warn**
@@ -43,7 +49,7 @@ The recon report established a complete picture before any test workloads were s
 
 ### Attack path 1 — Sensitive file read goes undetected
 
-**Primitive:** `verify exec`  
+**Primitive:** `probe exec`  
 **Command:** `cat /etc/shadow`  
 **Expected:** `failed` (a restrictive policy or PSA should prevent the pod or block the read)  
 **Observed:** `succeeded` — exit code 0, shadow file contents returned in stdout
@@ -64,7 +70,7 @@ With no policy engine and no PSA labels on the namespace, the pod was admitted w
 
 ### Attack path 2 — Host namespace escape with no detection
 
-**Primitive:** `verify detect`  
+**Primitive:** `probe detect`  
 **Technique:** `nsenter` with `hostPID: true`  
 **Expected:** `no alert` (no runtime agent installed, so no alert is possible)  
 **Observed:** `no alert observed`
@@ -86,7 +92,7 @@ This is the combination that produces a **Critical** classification: the attack 
 
 ### Control verification — ChaosClaw RBAC isolation held
 
-**Primitive:** `verify identity`  
+**Primitive:** `probe identity`  
 **Service account:** `chaosclaw-runner`  
 **Check:** `create pods` in `default` namespace  
 **Expected:** `denied`  
@@ -126,13 +132,3 @@ This run validates ChaosClaw against a known-bad cluster and confirms two things
 
 **Evidence quality.** Every finding is backed by a structured JSON artifact with the exact command, exit code, stdout, and cleanup status. This is verifiable, reproducible evidence — not a scanner score or a static configuration check.
 
----
-
-## Artifacts
-
-| File | Description |
-|---|---|
-| `examples/recon.json` | Full ReconReport — 1 Critical, 3 High, 2 Warn |
-| `examples/exec-shadow.json` | Sensitive file read — FAIL (succeeded when expected to fail) |
-| `examples/detect-nsenter.json` | Host namespace escape — PASS against expectation, Critical posture finding |
-| `examples/identity-chaosclaw-runner.json` | RBAC isolation check — PASS (correctly denied) |

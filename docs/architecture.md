@@ -169,10 +169,10 @@ Handles command parsing, flags, output formatting, and exit codes.
 Example commands:
 
 ```bash
-chaosclaw verify preflight
-chaosclaw verify run --pack preventive-baseline
-chaosclaw verify run --scenario deny-privileged-container
-chaosclaw verify run --pack preventive-baseline --context prod-us-east --output result.json
+chaosclaw probe preflight
+chaosclaw probe run --pack preventive-baseline
+chaosclaw probe run --scenario deny-privileged-container
+chaosclaw probe run --pack preventive-baseline --context prod-us-east --output result.json
 chaosclaw scenarios list
 chaosclaw scenarios show deny-hostpath
 ```
@@ -607,39 +607,9 @@ Exit criteria:
 
 * the product supports repeat operational use, not just one-time validation
 
-For current implementation status, see [progress.md](progress.md).
-
 ---
 
-## 12. Recommendation
-
-### Final recommendation
-
-Ship **ChaosClaw first as a deterministic single-cluster CLI**.
-
-Then use **OpenClaw as the orchestration layer** to expand the same engine into:
-
-* multi-cluster verification
-* skill-driven workflows
-* fleet summaries
-* remediation guidance
-* re-test loops
-
-### Architectural statement
-
-> **ChaosClaw is the safe execution sandbox for Kubernetes security verification. OpenClaw is the optional intelligence and orchestration layer that decides what to test, drives free-form pentesting, and scales ChaosClaw across clusters and workflows.**
-
-This gives you the cleanest path to:
-
-* fast MVP delivery
-* trustworthy verification semantics
-* low architectural risk
-* future multi-cluster expansion
-* a coherent product story
-
----
-
-## 13. Implementation Language
+## 12. Implementation Language
 
 **Decision:** ChaosClaw is implemented in **TypeScript (Node.js ≥ 22.16.0)**.
 

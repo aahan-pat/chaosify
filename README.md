@@ -22,33 +22,128 @@ npx chaosclaw --help
 
 ```bash
 # Initialize the test namespace
-chaosclaw recon init
+chaosclaw setup init
 
 # Survey the cluster's security posture (read-only)
-chaosclaw recon all --output recon.json
+chaosclaw recon webhooks --output recon-webhooks.json --format json
+chaosclaw recon policies --output recon-policies.json --format json
+chaosclaw recon psa      --output recon-psa.json      --format json
+chaosclaw recon rbac     --output recon-rbac.json     --format json
 
-# Check the cluster is ready for verification
-chaosclaw verify preflight
+# Check the cluster is ready
+chaosclaw probe preflight
 
 # Run the preventive baseline pack
-chaosclaw verify run --pack preventive-baseline --output result.json
+chaosclaw probe run --pack preventive-baseline --output result.json
 
 # Run a single scenario
-chaosclaw verify run --scenario deny-hostpath --context prod-us-east
+chaosclaw probe run --scenario deny-hostpath --context prod-us-east
 
 # Test an arbitrary manifest
-chaosclaw verify run --manifest ./my-pod.yaml --expect rejected
+chaosclaw probe run --manifest ./my-pod.yaml --expect rejected
 ```
 
 Results are `PASS`, `FAIL`, `ERROR`, or `SKIPPED`. Every run produces a structured JSON evidence artifact.
 
+## Command groups
+
+| Group | Description |
+|---|---|
+| `setup` | Initialize and tear down the test namespace |
+| `recon` | Survey cluster security posture — read-only |
+| `probe` | Execute attack primitives and scenario packs |
+| `scenarios` | Discover and inspect available scenarios |
+
+### Setup
+
+```bash
+chaosclaw setup init     # Create namespace, ResourceQuota, ServiceAccount, Role/RoleBinding
+chaosclaw setup cleanup  # Tear down the test namespace
+```
+
+### Recon
+
+Survey the cluster before any test workloads are submitted. All tools are read-only.
+
+```bash
+chaosclaw recon webhooks          # Fail-open webhook detection
+chaosclaw recon policies          # Kyverno / Gatekeeper probe, audit-mode detection
+chaosclaw recon psa               # Pod Security Admission labels per namespace
+chaosclaw recon rbac              # Cluster-admin bindings, high-privilege service accounts
+chaosclaw recon nodes             # Kernel versions, container runtimes, AppArmor presence
+chaosclaw recon network-policies  # Per-namespace network segmentation gaps
+chaosclaw recon runtime-agents    # Detect Falco, KubeArmor, Tetragon, Tracee
+chaosclaw recon topology          # Resource graph: ingress paths, secret mounts, SA bindings (requires graphnetes)
+```
+
+All tools support `--context <name>`, `--output <file>`, and `--format json`.
+
+### Probe
+
+Four composable execution primitives for free-form pentesting, plus scenario pack runs.
+
+```bash
+# Run a built-in scenario pack
+chaosclaw probe run --pack preventive-baseline --output result.json
+chaosclaw probe run --pack runtime-baseline --alert-source falco
+
+# Check cluster readiness
+chaosclaw probe preflight --context prod-us-east
+
+# Submit a pod, exec a command, capture exit code + stdout + stderr
+chaosclaw probe exec \
+  --pod ./probe.yaml \
+  --run "cat /var/run/secrets/kubernetes.io/serviceaccount/token" \
+  --expect succeeded \
+  --alert-source falco
+
+# Probe a target endpoint from inside a pod
+chaosclaw probe network \
+  --from ./net-probe.yaml \
+  --target http://169.254.169.254/latest/meta-data/ \
+  --expect unreachable
+
+# Test what a service account is actually authorized to do
+chaosclaw probe identity \
+  --as default \
+  --can list \
+  --resource secrets \
+  --resource-namespace kube-system \
+  --expect denied
+
+# Exec a threat command and poll a runtime tool for a correlated alert
+chaosclaw probe detect \
+  --pod ./escape-probe.yaml \
+  --run "nsenter --mount=/proc/1/ns/mnt -- cat /etc/shadow" \
+  --expect alert_fired \
+  --alert-source falco \
+  --observation-window 15
+```
+
+### Scenario discovery
+
+```bash
+chaosclaw scenarios list
+chaosclaw scenarios list --pack preventive-baseline
+chaosclaw scenarios show deny-privileged-container
+```
+
+## OpenClaw skills
+
+ChaosClaw ships two OpenClaw skills in `skills/`:
+
+| Skill | Trigger | Description |
+|---|---|---|
+| `chaosclaw` | "Verify controls on this cluster" | Targeted control verification — init, preflight, scenario pack runs, result parsing, failure summarization |
+| `openclaw-pentest` | "Pentest this cluster" | Autonomous security assessment — recon-first, then execution primitives to probe the attack surface; produces a prioritized Critical/High/Gap report |
+
+Use `chaosclaw` when you know what controls to verify. Use `openclaw-pentest` when you want an autonomous assessment across all control layers.
+
+To use with Claude Code, point to the skills directory in your Claude Code settings or symlink the skill files to `~/.claude/skills/`.
+
 ## Docs
 
-- [Architecture](docs/architecture.md) — system design, safety model, multi-cluster model, and roadmap
-- [CLI Design & Screen Library](docs/design.md) — UX principles, workflows, command model, and canonical terminal output examples
-- [Reference](docs/reference.md) — complete command reference, flags, exit codes, and OpenClaw skill setup
-- [Scenarios](docs/scenarios.md) — full scenario library with control objectives, FAIL explanations, and remediation
-- [Recon Layer](docs/recon-design.md) — reconnaissance commands, flag design, and output specs
-- [Execution Layer](docs/execution-layer-design.md) — execution primitives, evidence schema, and OpenClaw usage patterns
+- [Architecture](docs/architecture.md) — system design, safety model, and multi-cluster model
+- [Reference](docs/reference.md) — complete command reference, flags, and exit codes
+- [Scenarios](docs/scenarios.md) — full scenario library with control objectives and remediation
 - [Case Study: Kubernetes Goat](docs/case-study-kubernetes-goat.md) — end-to-end run against a deliberately vulnerable cluster
-- [Progress](docs/progress.md) — implementation status by phase

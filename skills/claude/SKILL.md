@@ -193,8 +193,8 @@ Run `probe detect` after every `probe exec` that succeeds — this separates "ca
 | Non-built-in cluster-admin SA | `probe identity` | Prove SA can list secrets, create pods in production namespaces |
 | High-privilege SA | `probe identity` | Prove specific dangerous permissions |
 | No egress NetworkPolicy | `probe network` | Probe metadata service, etcd, kubelet, cross-namespace pods |
-| Runtime agent absent | `verify exec --alert-source none` | Confirm exec succeeds — detection layer absent |
-| Runtime agent present | `verify exec --alert-source <tool>` | Confirm exec AND check if tool fires |
+| Runtime agent absent | `probe exec --alert-source none` | Confirm exec succeeds — detection layer absent |
+| Runtime agent present | `probe exec --alert-source <tool>` | Confirm exec AND check if tool fires |
 | Runtime agent present | `probe detect` | Test whether tool fires on specific threat commands |
 | Old kernel / no AppArmor | `probe exec` | Test escape techniques (nsenter, chroot) |
 | Topology: `secretMounts` present | `probe exec` | Exec into Pod, read the secret path — confirm credential accessible |
@@ -374,9 +374,9 @@ Check `data.agents` from the `runtime-agents` recon output:
 
 **psa:** Namespaces without PSA labels → run `probe exec` from a pod in that namespace.
 
-**rbac:** Non-built-in cluster-admin SA → `verify identity --as <sa> --can list --resource secrets --resource-namespace kube-system --expect denied`. Any High-privilege SA → `verify identity --can create --resource pods --resource-namespace <prod-ns> --expect denied`. A `Fail` (allowed when denied expected) = confirmed privilege escalation path → **High**.
+**rbac:** Non-built-in cluster-admin SA → `probe identity --as <sa> --can list --resource secrets --resource-namespace kube-system --expect denied`. Any High-privilege SA → `probe identity --can create --resource pods --resource-namespace <prod-ns> --expect denied`. A `Fail` (allowed when denied expected) = confirmed privilege escalation path → **High**.
 
-**network-policies:** Namespaces with no NetworkPolicies → `verify network --target http://169.254.169.254/latest/meta-data/ --expect unreachable`. Always run at least one network probe per cluster even if policies look clean.
+**network-policies:** Namespaces with no NetworkPolicies → `probe network --target http://169.254.169.254/latest/meta-data/ --expect unreachable`. Always run at least one network probe per cluster even if policies look clean.
 
 **runtime-agents:** No agent → `--alert-source none`, record detection layer absent. Falco only → can detect, cannot block. Tetragon/KubeArmor → can detect and block.
 

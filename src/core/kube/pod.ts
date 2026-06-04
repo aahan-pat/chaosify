@@ -14,8 +14,7 @@ export interface ExecResult {
  * @param manifest Pod manifest to submit.
  */
 export async function submitPod(api: k8s.CoreV1Api, namespace: string, manifest: k8s.V1Pod): Promise<k8s.V1Pod> {
-    const { body } = await api.createNamespacedPod({ namespace, body: manifest })
-    return body
+    return await api.createNamespacedPod({ namespace, body: manifest })
 }
 
 /**
@@ -28,8 +27,8 @@ export async function submitPod(api: k8s.CoreV1Api, namespace: string, manifest:
 export async function waitForReady(api: k8s.CoreV1Api, namespace: string, name: string, timeoutMs = 30_000): Promise<void> {
     const deadline = Date.now() + timeoutMs
     while (Date.now() < deadline) {
-        const { body } = await api.readNamespacedPodStatus({ name, namespace })
-        if (body.status?.phase === 'Running') return
+        const pod = await api.readNamespacedPodStatus({ name, namespace })
+        if (pod.status?.phase === 'Running') return
         // Wait 1s between polls to avoid hammering the API server.
         await new Promise(r => setTimeout(r, 1_000))
     }

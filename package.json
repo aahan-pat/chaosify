@@ -1,5 +1,5 @@
-﻿{
-  "name": "chaosify",
+{
+  "name": "chaosify-kubernetes",
   "version": "0.1.1",
   "description": "Deterministic CLI for Kubernetes Continuous Control Verification",
   "keywords": [
@@ -16,7 +16,7 @@
   },
   "type": "module",
   "bin": {
-    "chaosify": "./dist/index.js"
+    "chaosify": "dist/index.js"
   },
   "files": [
     "dist/",

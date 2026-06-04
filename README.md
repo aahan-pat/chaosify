@@ -1,5 +1,7 @@
 ﻿# Chaosify
 
+[![npm](https://img.shields.io/npm/v/chaosify-kubernetes)](https://www.npmjs.com/package/chaosify-kubernetes)
+
 Chaosify is a safe, namespace-scoped execution environment for Kubernetes security verification. It proves whether your Kubernetes guardrails actually work — not just whether they are configured — and serves as the controlled execution sandbox for OpenClaw-driven pentesting.
 
 All execution is confined to a dedicated, RBAC-enforced test namespace. Chaosify structurally cannot touch any other namespace in the cluster.
@@ -9,13 +11,13 @@ All execution is confined to a dedicated, RBAC-enforced test namespace. Chaosify
 Requires Node.js ≥ 22.16.0.
 
 ```bash
-npm install -g chaosify
+npm install -g chaosify-kubernetes
 ```
 
 To try without installing:
 
 ```bash
-npx chaosify --help
+npx chaosify-kubernetes --help
 ```
 
 ## Docs

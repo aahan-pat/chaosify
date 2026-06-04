@@ -1,4 +1,4 @@
-id: deny-forbidden-capabilities
+﻿id: deny-forbidden-capabilities
 version: 1
 name: Forbidden Linux capabilities denied
 description: Attempts to create a pod requesting a dangerous Linux capability (NET_ADMIN). The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-capabilities-test
+    name: chaosify-capabilities-test
   spec:
     containers:
       - name: test

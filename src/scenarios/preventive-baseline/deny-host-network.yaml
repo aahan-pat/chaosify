@@ -1,4 +1,4 @@
-id: deny-host-network
+﻿id: deny-host-network
 version: 1
 name: Host network denied
 description: Attempts to create a pod with hostNetwork true. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-host-network-test
+    name: chaosify-host-network-test
   spec:
     hostNetwork: true
     containers:

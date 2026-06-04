@@ -1,4 +1,4 @@
-// Implements “chaosclaw probe identity” — the RBAC capability primitive.
+﻿// Implements “chaosify probe identity” — the RBAC capability primitive.
 // Tests what a specific service account is actually authorized to do by issuing
 // a SubjectAccessReview against the Kubernetes API.
 // No pod is created; this is a pure API call. Runtime detection does not apply.
@@ -61,7 +61,7 @@ export function identity(probe: Command): void {
             const builder = new EvidenceBuilder({ clusterContext, startedAt })
 
             if (opts.format !== 'json') {
-                header('ChaosClaw Identity')
+                header('Chaosify Identity')
                 field('Cluster Context', clusterContext)
                 field('Service Account', saUser)
                 field('Verb', opts.can)

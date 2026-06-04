@@ -1,5 +1,5 @@
-{
-  "name": "chaosclaw",
+﻿{
+  "name": "chaosify",
   "version": "0.1.1",
   "description": "Deterministic CLI for Kubernetes Continuous Control Verification",
   "keywords": [
@@ -12,11 +12,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aahan-pat/chaosclaw.git"
+    "url": "git+https://github.com/aahan-pat/chaosify.git"
   },
   "type": "module",
   "bin": {
-    "chaosclaw": "./dist/index.js"
+    "chaosify": "./dist/index.js"
   },
   "files": [
     "dist/",

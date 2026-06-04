@@ -1,4 +1,4 @@
-# ChaosClaw Architecture
+﻿# Chaosify Architecture
 ## Single-Cluster MVP and Multi-Cluster Evolution with OpenClaw
 
 **Version:** 0.1  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-ChaosClaw is a **safe, namespace-scoped execution environment** for Kubernetes security verification.
+Chaosify is a **safe, namespace-scoped execution environment** for Kubernetes security verification.
 
 The MVP focuses on one core job:
 
@@ -38,13 +38,13 @@ Its role is to:
 
 **Key design rule:**
 
-> **ChaosClaw owns correctness and safety. OpenClaw owns what gets tested and what the results mean.**
+> **Chaosify owns correctness and safety. OpenClaw owns what gets tested and what the results mean.**
 
 ---
 
 ## 2. Problem the Architecture Solves
 
-ChaosClaw is intended to validate whether Kubernetes controls are effective in real environments, not just configured.
+Chaosify is intended to validate whether Kubernetes controls are effective in real environments, not just configured.
 
 The architecture therefore needs to support:
 
@@ -69,7 +69,7 @@ The architecture must avoid over-building in v1 while still creating a strong pa
 ### 3.1 Deterministic before agentic
 Verification correctness cannot depend on autonomous reasoning.
 
-ChaosClaw must be able to prove whether a control passed or failed using deterministic logic.
+Chaosify must be able to prove whether a control passed or failed using deterministic logic.
 
 ### 3.2 Single-cluster correctness is the foundation
 Fleet-wide verification is only useful if one-cluster verification is reliable, safe, and repeatable.
@@ -84,13 +84,13 @@ All execution must be:
 - automatically cleaned up
 
 ### 3.4 Built-in scenario packs are optional
-ChaosClaw ships optional pre-built scenario packs for common preventive controls. These are convenience — not the primary interface. The primary execution path is `--manifest`, which accepts any manifest from any caller. Scenario packs are declarative and versioned, but their presence is not required for ChaosClaw to be useful.
+Chaosify ships optional pre-built scenario packs for common preventive controls. These are convenience — not the primary interface. The primary execution path is `--manifest`, which accepts any manifest from any caller. Scenario packs are declarative and versioned, but their presence is not required for Chaosify to be useful.
 
 ### 3.5 OpenClaw extends workflows; it does not redefine results
-OpenClaw may invoke ChaosClaw, summarize outcomes, and recommend next steps, but it should not own pass/fail semantics.
+OpenClaw may invoke Chaosify, summarize outcomes, and recommend next steps, but it should not own pass/fail semantics.
 
 ### 3.6 Namespace RBAC is the primary safety boundary
-ChaosClaw's safety guarantee is not about restricting what manifests can be submitted — it is about ensuring that whatever gets submitted cannot escape the test namespace. The CLI's service account is RBAC-bound to the test namespace only. This means OpenClaw can generate and submit arbitrary manifests for free-form pentesting, and the safety guarantee holds regardless. The blast radius is enforced structurally, not by convention.
+Chaosify's safety guarantee is not about restricting what manifests can be submitted — it is about ensuring that whatever gets submitted cannot escape the test namespace. The CLI's service account is RBAC-bound to the test namespace only. This means OpenClaw can generate and submit arbitrary manifests for free-form pentesting, and the safety guarantee holds regardless. The blast radius is enforced structurally, not by convention.
 
 ### 3.7 Evidence must remain stable as the system scales
 The JSON evidence schema created by the single-cluster CLI should remain the same foundation for later multi-cluster aggregation.
@@ -104,8 +104,8 @@ The JSON evidence schema created by the single-cluster CLI should remain the sam
 ```mermaid
 flowchart TD
     OC["**OpenClaw** *(optional post-MVP)*\nSkills · Fleet Workflows · Explanation · Remediation · Re-test"]
-    A["**ChaosClaw Product Layer**\nCLI UX · Report Formatting · Packaging · Scenario Packs"]
-    B["**ChaosClaw Verification Core**\nScenario Registry · Preflight Checks · Executor\nValidation Engine · Evidence Builder · Cleanup Manager\nRuntime Executor · Alert Sources · Runtime Validator"]
+    A["**Chaosify Product Layer**\nCLI UX · Report Formatting · Packaging · Scenario Packs"]
+    B["**Chaosify Verification Core**\nScenario Registry · Preflight Checks · Executor\nValidation Engine · Evidence Builder · Cleanup Manager\nRuntime Executor · Alert Sources · Runtime Validator"]
     C["**Recon Layer** *(read-only)*\nWebhooks · Policies · PSA · RBAC · Nodes · NetworkPolicies\nRuntimeAgents · Topology · ReconReport"]
     D[("Kubernetes API / kubeconfig")]
 
@@ -117,13 +117,13 @@ flowchart TD
 
 ### 4.2 Interpretation
 
-* **ChaosClaw CLI core** is the product you ship first.
-* **ChaosClaw verification core** is the source of truth for execution and validation.
+* **Chaosify CLI core** is the product you ship first.
+* **Chaosify verification core** is the source of truth for execution and validation.
 * **OpenClaw** is added later as the orchestration plane for multi-cluster and workflow automation.
 
 ---
 
-## 5. ChaosClaw Single-Cluster MVP
+## 5. Chaosify Single-Cluster MVP
 
 ## 5.1 Product definition
 
@@ -169,12 +169,12 @@ Handles command parsing, flags, output formatting, and exit codes.
 Example commands:
 
 ```bash
-chaosclaw probe preflight
-chaosclaw probe run --pack preventive-baseline
-chaosclaw probe run --scenario deny-privileged-container
-chaosclaw probe run --pack preventive-baseline --context prod-us-east --output result.json
-chaosclaw scenarios list
-chaosclaw scenarios show deny-hostpath
+chaosify probe preflight
+chaosify probe run --pack preventive-baseline
+chaosify probe run --scenario deny-privileged-container
+chaosify probe run --pack preventive-baseline --context prod-us-east --output result.json
+chaosify scenarios list
+chaosify scenarios show deny-hostpath
 ```
 
 ### B. Scenario registry
@@ -249,13 +249,13 @@ Ensures:
 ## 5.3 MVP execution flow
 
 ```text
-1. User runs ChaosClaw CLI.
+1. User runs Chaosify CLI.
 2. CLI resolves kube context and selected scenario pack.
 3. Preflight checks verify safety and prerequisites.
 4. CLI creates scoped test namespace.
 5. Scenarios execute sequentially.
 6. Kubernetes admission allows or rejects each action.
-7. ChaosClaw captures raw outcome.
+7. Chaosify captures raw outcome.
 8. Validation engine computes Pass / Fail / Error / Skipped.
 9. Cleanup manager removes created artifacts.
 10. Evidence builder writes JSON and terminal summary.
@@ -303,7 +303,7 @@ Safety is non-negotiable.
 
 ### Dedicated test namespace
 
-All execution occurs in a dedicated ChaosClaw test namespace.
+All execution occurs in a dedicated Chaosify test namespace.
 
 ### Least-privilege access
 
@@ -362,7 +362,7 @@ It should **not** provide:
 
 * the core validation logic
 * the source of truth for pass/fail
-* safety guarantees (those belong to ChaosClaw's RBAC enforcement)
+* safety guarantees (those belong to Chaosify's RBAC enforcement)
 
 ---
 
@@ -370,11 +370,11 @@ It should **not** provide:
 
 | Entity            | Owned by   | Purpose                                                |
 | ----------------- | ---------- | ------------------------------------------------------ |
-| Scenario          | ChaosClaw  | Optional pre-built test                                |
-| Scenario Pack     | ChaosClaw  | Optional group of pre-built tests                      |
+| Scenario          | Chaosify  | Optional pre-built test                                |
+| Scenario Pack     | Chaosify  | Optional group of pre-built tests                      |
 | Manifest          | OpenClaw   | Dynamically generated test input                       |
-| Execution sandbox | ChaosClaw  | Safe, RBAC-scoped execution and outcome recording      |
-| Skill             | OpenClaw   | Invokes ChaosClaw and adds workflow and analysis layer |
+| Execution sandbox | Chaosify  | Safe, RBAC-scoped execution and outcome recording      |
+| Skill             | OpenClaw   | Invokes Chaosify and adds workflow and analysis layer |
 
 ---
 
@@ -382,7 +382,7 @@ It should **not** provide:
 
 ## 8.1 Design rule
 
-> **ChaosClaw remains single-cluster per execution. OpenClaw scales it horizontally across many clusters.**
+> **Chaosify remains single-cluster per execution. OpenClaw scales it horizontally across many clusters.**
 
 This keeps the verification engine simple and reusable.
 
@@ -397,7 +397,7 @@ This keeps the verification engine simple and reusable.
 | Fleet skill router | inventory | scheduling | summarization   |
 +---------------------+--------------------+--------------------+
                       |                    |
-          invokes ChaosClaw CLI     invokes ChaosClaw CLI
+          invokes Chaosify CLI     invokes Chaosify CLI
                       |                    |
              +--------v--------+  +--------v--------+
              | Cluster A run   |  | Cluster B run   |
@@ -425,7 +425,7 @@ Migrate to **one agent per cluster or environment group** as isolation requireme
 1. User asks OpenClaw to verify a fleet.
 2. OpenClaw resolves the target list.
 3. OpenClaw selects the scenario pack and concurrency policy.
-4. For each cluster, OpenClaw invokes ChaosClaw CLI with the correct context.
+4. For each cluster, OpenClaw invokes Chaosify CLI with the correct context.
 5. Each run produces an independent JSON artifact.
 6. OpenClaw aggregates results.
 7. OpenClaw highlights failed controls and patterns.
@@ -458,11 +458,11 @@ clusters:
 
 ## 8.6 Aggregation model
 
-OpenClaw should aggregate ChaosClaw outputs, not replace them.
+OpenClaw should aggregate Chaosify outputs, not replace them.
 
 ### Per-cluster output remains:
 
-* one ChaosClaw JSON artifact
+* one Chaosify JSON artifact
 * one deterministic result set
 * one cluster-scoped source of truth
 
@@ -480,7 +480,7 @@ This keeps aggregation downstream from the same core evidence model.
 
 ## 9. Ownership Boundaries
 
-## 9.1 Owned by ChaosClaw
+## 9.1 Owned by Chaosify
 
 * optional built-in scenario definitions and pack definitions
 * CLI contract
@@ -545,7 +545,7 @@ This makes OpenClaw orchestration straightforward later.
 
 ## 11. Implementation Roadmap
 
-## Phase 1 — ChaosClaw CLI core
+## Phase 1 — Chaosify CLI core
 
 Deliver:
 
@@ -581,8 +581,8 @@ Exit criteria:
 
 Deliver:
 
-* **ChaosClaw MCP server** — exposes `chaosclaw_preflight`, `chaosclaw_run_scenario`, `chaosclaw_run_pack`, `chaosclaw_list_scenarios`, `chaosclaw_get_evidence` as structured MCP tool calls
-* Bounded evidence responses with compact `summary` top-level field; full detail paged via `chaosclaw_get_evidence`
+* **Chaosify MCP server** — exposes `chaosify_preflight`, `chaosify_run_scenario`, `chaosify_run_pack`, `chaosify_list_scenarios`, `chaosify_get_evidence` as structured MCP tool calls
+* Bounded evidence responses with compact `summary` top-level field; full detail paged via `chaosify_get_evidence`
 * Inventory-driven fleet skill
 * Fan-out execution
 * Fleet aggregation
@@ -592,7 +592,7 @@ Deliver:
 Exit criteria:
 
 * Multiple clusters can be verified using the same single-cluster core
-* OpenClaw can invoke ChaosClaw via MCP without subprocess orchestration
+* OpenClaw can invoke Chaosify via MCP without subprocess orchestration
 
 ## Phase 4 — Closed-loop workflows
 
@@ -611,20 +611,20 @@ Exit criteria:
 
 ## 12. Implementation Language
 
-**Decision:** ChaosClaw is implemented in **TypeScript (Node.js ≥ 22.16.0)**.
+**Decision:** Chaosify is implemented in **TypeScript (Node.js ≥ 22.16.0)**.
 
 ### Rationale
 
-ChaosClaw and OpenClaw are sibling products. OpenClaw is a TypeScript-first monorepo. This alignment provides:
+Chaosify and OpenClaw are sibling products. OpenClaw is a TypeScript-first monorepo. This alignment provides:
 
 * **Shared JSON schema types** — The evidence schema can be a shared TypeScript package. No translation layer, no schema drift between the two products.
-* **Skill integration** — OpenClaw skills are TypeScript. ChaosClaw can be imported directly by skills as a library, not only invoked as a subprocess.
+* **Skill integration** — OpenClaw skills are TypeScript. Chaosify can be imported directly by skills as a library, not only invoked as a subprocess.
 * **Tooling alignment** — Same compiler (`tsc`/`tsdown`), test runner (`vitest`), linter (`oxlint`), and package manager (`pnpm`) as OpenClaw. Reduces toolchain fragmentation across the two products.
 * **Kubernetes client** — `@kubernetes/client-node` is the official Kubernetes JavaScript/TypeScript client, maintained by the Kubernetes sig-api-machinery team.
 
 ### Distribution
 
-ChaosClaw is bundled to a single distributable using `tsdown`, aligned with OpenClaw's build pipeline. A Docker image is provided for environments without a Node.js runtime.
+Chaosify is bundled to a single distributable using `tsdown`, aligned with OpenClaw's build pipeline. A Docker image is provided for environments without a Node.js runtime.
 
 ### Tooling stack
 

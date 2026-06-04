@@ -1,4 +1,4 @@
-// Executes runtime detection scenarios against a live Kubernetes cluster.
+﻿// Executes runtime detection scenarios against a live Kubernetes cluster.
 // Unlike the admission-based ScenarioExecutor, runtime scenarios expect the workload
 // to be admitted â€” the signal under test is whether the runtime security tool fires
 // an alert after the threat command is executed inside the running pod.
@@ -128,7 +128,7 @@ export class RuntimeScenarioExecutor {
         let alert: RuntimeAlert | null = null
         let observeError: string | undefined
         try {
-            alert = await this.alertSource.pollForAlert(namespace, 'chaosclaw-test-', windowStart, observationWindowMs)
+            alert = await this.alertSource.pollForAlert(namespace, 'chaosify-test-', windowStart, observationWindowMs)
         } catch (err: unknown) {
             observeError = this.formatError(err)
         }

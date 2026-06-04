@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+﻿import { describe, it, expect, vi, afterEach } from 'vitest'
 import { validateOpts } from '../../../src/cli/commands/verify/run/validate-opts.js'
 import type { RunOpts } from '../../../src/cli/commands/verify/run/validate-opts.js'
 
@@ -9,7 +9,7 @@ import type { RunOpts } from '../../../src/cli/commands/verify/run/validate-opts
 // Base options with all required fields set; tests override only what they care about.
 function opts(overrides: Partial<RunOpts> = {}): RunOpts {
   return {
-    namespace: 'chaosclaw',
+    namespace: 'chaosify',
     alertSource: 'none',
     format: 'table',
     cleanup: 'always',

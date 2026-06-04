@@ -1,4 +1,4 @@
-id: deny-privilege-escalation
+﻿id: deny-privilege-escalation
 version: 1
 name: Privilege escalation denied
 description: Attempts to create a pod that explicitly allows privilege escalation and runs as root. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-privilege-escalation-test
+    name: chaosify-privilege-escalation-test
   spec:
     containers:
       - name: test

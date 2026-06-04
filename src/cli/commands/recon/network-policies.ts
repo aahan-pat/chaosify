@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import { surveyNetworkPolicies, type NamespaceNetworkStatus } from '../../../core/recon/network-policies.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
@@ -33,7 +33,7 @@ export function networkPolicies(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Network Policies')
+            header('Chaosify Recon — Network Policies')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {

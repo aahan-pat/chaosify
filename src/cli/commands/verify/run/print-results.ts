@@ -1,4 +1,4 @@
-import type { RunEvidence } from '../../../../types/evidence.js'
+﻿import type { RunEvidence } from '../../../../types/evidence.js'
 import { header, field, section, indent, blank } from '../../../output.js'
 import type { AnyScenario } from './resolve.js'
 
@@ -18,7 +18,7 @@ export function printHeader(
         verbose?: boolean
     }
 ): void {
-    header('ChaosClaw Probe Run')
+    header('Chaosify Probe Run')
     field('Cluster Context', clusterContext)
     if (opts.pack) field('Scenario Pack', opts.pack)
     if (opts.scenario) field('Scenario', opts.scenario)

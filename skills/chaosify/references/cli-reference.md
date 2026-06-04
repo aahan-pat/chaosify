@@ -1,9 +1,9 @@
-# CLI Reference
+﻿# CLI Reference
 
 ## Preflight
 
 ```bash
-chaosclaw probe preflight --context <context-name>
+chaosify probe preflight --context <context-name>
 ```
 
 | Outcome | Action |
@@ -16,29 +16,29 @@ chaosclaw probe preflight --context <context-name>
 ## Run — Scenario Pack
 
 ```bash
-chaosclaw probe run \
+chaosify probe run \
   --pack <preventive-baseline|runtime-baseline> \
   --context <context-name> \
-  --output chaosclaw-result.json
+  --output chaosify-result.json
 
 # Runtime pack with a detection tool
-chaosclaw probe run \
+chaosify probe run \
   --pack runtime-baseline \
   --alert-source <falco|tetragon|kubearmor|none> \
   --context <context-name> \
-  --output chaosclaw-runtime.json
+  --output chaosify-runtime.json
 ```
 
 ## Run — Single Scenario
 
 ```bash
-chaosclaw probe run --scenario <scenario-id> --context <context-name>
+chaosify probe run --scenario <scenario-id> --context <context-name>
 ```
 
 ## Run — Arbitrary Manifest
 
 ```bash
-chaosclaw probe run \
+chaosify probe run \
   --manifest <path> \
   --expect <rejected|allowed> \
   --context <context-name>
@@ -49,7 +49,7 @@ chaosclaw probe run \
 Submit a pod, exec a command, capture exit code + stdout + stderr.
 
 ```bash
-chaosclaw probe exec \
+chaosify probe exec \
   --pod <path> \
   --run "<command>" \
   --expect <succeeded|failed|denied> \
@@ -67,7 +67,7 @@ chaosclaw probe exec \
 ## Network — Reachability From Inside a Pod
 
 ```bash
-chaosclaw probe network \
+chaosify probe network \
   --from <pod.yaml> \
   --target <url|host:port> \
   --expect <reachable|unreachable> \
@@ -83,7 +83,7 @@ Protocol is inferred from the target (`http://` → http, `https://` → https, 
 Test what a service account is actually authorized to do. No pod created.
 
 ```bash
-chaosclaw probe identity \
+chaosify probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \
@@ -101,7 +101,7 @@ Use slash notation for subresources: `--resource pods/exec`. Use `--group rbac.a
 Submit a pod, exec a threat command, poll the runtime tool for a correlated alert.
 
 ```bash
-chaosclaw probe detect \
+chaosify probe detect \
   --pod <path> \
   --run "<threat-command>" \
   --expect <alert_fired|action_blocked|no_alert> \
@@ -118,10 +118,10 @@ The `recon` group surveys the cluster's security posture. All tools are read-onl
 ### Initialize test namespace
 
 ```bash
-chaosclaw setup init --context <context-name>
+chaosify setup init --context <context-name>
 ```
 
-Creates the `chaosclaw` namespace, `ResourceQuota`, `ServiceAccount` `chaosclaw-runner`, and a namespace-scoped `Role`/`RoleBinding`. Idempotent.
+Creates the `chaosify` namespace, `ResourceQuota`, `ServiceAccount` `chaosify-runner`, and a namespace-scoped `Role`/`RoleBinding`. Idempotent.
 
 ### Full survey
 
@@ -130,14 +130,14 @@ Run individual tools sequentially (see below). There is no `recon all` command �
 ### Individual tools
 
 ```bash
-chaosclaw recon webhooks          --context <ctx>
-chaosclaw recon policies          --context <ctx>
-chaosclaw recon psa               --context <ctx>
-chaosclaw recon rbac              --context <ctx> [--include-system]
-chaosclaw recon nodes             --context <ctx>
-chaosclaw recon network-policies  --context <ctx>
-chaosclaw recon runtime-agents    --context <ctx>
-chaosclaw recon topology          --context <ctx> --namespace <ns> [--graph <path>]
+chaosify recon webhooks          --context <ctx>
+chaosify recon policies          --context <ctx>
+chaosify recon psa               --context <ctx>
+chaosify recon rbac              --context <ctx> [--include-system]
+chaosify recon nodes             --context <ctx>
+chaosify recon network-policies  --context <ctx>
+chaosify recon runtime-agents    --context <ctx>
+chaosify recon topology          --context <ctx> --namespace <ns> [--graph <path>]
 ```
 
 All support `--output <file>` and `--format json`.
@@ -157,9 +157,9 @@ All support `--output <file>` and `--format json`.
 ## Scenario Discovery
 
 ```bash
-chaosclaw scenarios list
-chaosclaw scenarios list --pack preventive-baseline
-chaosclaw scenarios show <scenario-id>
+chaosify scenarios list
+chaosify scenarios list --pack preventive-baseline
+chaosify scenarios show <scenario-id>
 ```
 
 ## JSON Artifact Schema

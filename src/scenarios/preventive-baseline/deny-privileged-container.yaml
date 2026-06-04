@@ -1,4 +1,4 @@
-id: deny-privileged-container
+﻿id: deny-privileged-container
 version: 1
 name: Privileged container denied
 description: Attempts to create a pod running in privileged mode. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-privileged-test
+    name: chaosify-privileged-test
   spec:
     containers:
       - name: test

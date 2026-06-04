@@ -1,4 +1,4 @@
-id: deny-unapproved-registry
+﻿id: deny-unapproved-registry
 version: 1
 name: Unapproved registry denied
 description: Attempts to create a pod using an image from an unapproved registry. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-registry-test
+    name: chaosify-registry-test
   spec:
     containers:
       - name: test

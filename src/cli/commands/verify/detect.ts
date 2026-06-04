@@ -1,4 +1,4 @@
-// Implements “chaosclaw probe detect” — the runtime detection primitive.
+﻿// Implements “chaosify probe detect” — the runtime detection primitive.
 // Submits a pod, execs a threat command, polls the configured alert source, and
 // reports whether the runtime security tool fired an alert.
 import { basename } from 'node:path'
@@ -89,7 +89,7 @@ export function detect(probe: Command): void {
             })
 
             if (opts.format !== 'json') {
-                header('ChaosClaw Detect')
+                header('Chaosify Detect')
                 field('Cluster Context', clusterContext)
                 field('Pod Manifest', opts.pod)
                 field('Command', opts.run)

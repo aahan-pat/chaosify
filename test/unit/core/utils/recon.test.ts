@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { reconWrapper, SYSTEM_NAMESPACES } from '../../../../src/core/utils/recon.js'
 import type { ReconFinding } from '../../../../src/types/recon.js'
 
@@ -15,7 +15,7 @@ describe('SYSTEM_NAMESPACES', () => {
 
   it('does not contain application namespaces', () => {
     expect(SYSTEM_NAMESPACES.has('default')).toBe(false)
-    expect(SYSTEM_NAMESPACES.has('chaosclaw')).toBe(false)
+    expect(SYSTEM_NAMESPACES.has('chaosify')).toBe(false)
     expect(SYSTEM_NAMESPACES.has('production')).toBe(false)
   })
 })

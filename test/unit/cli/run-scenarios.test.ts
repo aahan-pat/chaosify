@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { runScenarios } from '../../../src/cli/commands/verify/run/run-scenarios.js'
 import type { RunContext } from '../../../src/cli/commands/verify/run/run-context.js'
 import type { ScenarioDefinition } from '../../../src/types/scenario.js'
@@ -109,7 +109,7 @@ function makeCtx(overrides: {
   } as unknown as RunContext
 }
 
-const BASE_OPTS = { namespace: 'chaosclaw-test', cleanup: 'always', format: 'table' }
+const BASE_OPTS = { namespace: 'chaosify-test', cleanup: 'always', format: 'table' }
 
 // ---------------------------------------------------------------------------
 // Test setup
@@ -222,7 +222,7 @@ describe('runScenarios — fail-fast', () => {
 describe('runScenarios — cleanup modes', () => {
   it('calls cleanup for every scenario when mode is "always" (pass or fail)', async () => {
     const ctx = makeCtx({
-      executeResult: makeExecution({ createdResourceName: 'chaosclaw-test-abc' }),
+      executeResult: makeExecution({ createdResourceName: 'chaosify-test-abc' }),
       validateResult: makeValidation('Fail'),
     })
     await runScenarios([makeScenario('s1')], ctx, { ...BASE_OPTS, cleanup: 'always' })
@@ -231,7 +231,7 @@ describe('runScenarios — cleanup modes', () => {
 
   it('calls cleanup only on passing scenarios when mode is "on-success"', async () => {
     const ctx = makeCtx({
-      executeResult: makeExecution({ createdResourceName: 'chaosclaw-test-abc' }),
+      executeResult: makeExecution({ createdResourceName: 'chaosify-test-abc' }),
       validateResult: makeValidation('Fail'),
     })
     await runScenarios([makeScenario('s1')], ctx, { ...BASE_OPTS, cleanup: 'on-success' })
@@ -241,7 +241,7 @@ describe('runScenarios — cleanup modes', () => {
 
   it('calls cleanup on a passing scenario when mode is "on-success"', async () => {
     const ctx = makeCtx({
-      executeResult: makeExecution({ createdResourceName: 'chaosclaw-test-abc' }),
+      executeResult: makeExecution({ createdResourceName: 'chaosify-test-abc' }),
       validateResult: makeValidation('Pass'),
     })
     await runScenarios([makeScenario('s1')], ctx, { ...BASE_OPTS, cleanup: 'on-success' })
@@ -250,7 +250,7 @@ describe('runScenarios — cleanup modes', () => {
 
   it('never calls cleanup when mode is "never"', async () => {
     const ctx = makeCtx({
-      executeResult: makeExecution({ createdResourceName: 'chaosclaw-test-abc' }),
+      executeResult: makeExecution({ createdResourceName: 'chaosify-test-abc' }),
       validateResult: makeValidation('Pass'),
     })
     await runScenarios([makeScenario('s1'), makeScenario('s2')], ctx, { ...BASE_OPTS, cleanup: 'never' })

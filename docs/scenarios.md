@@ -1,6 +1,6 @@
-# Scenario Library
+﻿# Scenario Library
 
-ChaosClaw scenarios are deterministic test cases that submit a known workload or command to a live cluster and verify the outcome against an expected result. Every scenario produces a structured JSON evidence artifact.
+Chaosify scenarios are deterministic test cases that submit a known workload or command to a live cluster and verify the outcome against an expected result. Every scenario produces a structured JSON evidence artifact.
 
 ## Packs
 
@@ -11,16 +11,16 @@ ChaosClaw scenarios are deterministic test cases that submit a known workload or
 
 ```bash
 # List all scenarios in a pack
-chaosclaw scenarios list --pack preventive-baseline
+chaosify scenarios list --pack preventive-baseline
 
 # Inspect a single scenario
-chaosclaw scenarios show deny-privileged-container
+chaosify scenarios show deny-privileged-container
 
 # Run a full pack
-chaosclaw probe run --pack preventive-baseline --context <ctx> --output result.json
+chaosify probe run --pack preventive-baseline --context <ctx> --output result.json
 
 # Run a single scenario
-chaosclaw probe run --scenario deny-privileged-container --context <ctx>
+chaosify probe run --scenario deny-privileged-container --context <ctx>
 ```
 
 ## Result vocabulary
@@ -170,7 +170,7 @@ Tests whether runtime security tools detect known threat techniques. Each scenar
 **Prerequisites:** A runtime security tool (Falco, Tetragon, or KubeArmor) must be running on the cluster. Use `--alert-source <tool>` to specify which tool to poll. Use `--alert-source none` for pipeline testing without a live tool.
 
 ```bash
-chaosclaw probe run --pack runtime-baseline --alert-source falco --context <ctx>
+chaosify probe run --pack runtime-baseline --alert-source falco --context <ctx>
 ```
 
 ---

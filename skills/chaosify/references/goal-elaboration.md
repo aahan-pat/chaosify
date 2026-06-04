@@ -1,14 +1,14 @@
-# Goal Elaboration — What Control Verification Means
+﻿# Goal Elaboration — What Control Verification Means
 
 ## The verification contract
 
-ChaosClaw tests whether Kubernetes *admission controls* actually block what they claim to block. It submits workloads that should be rejected, then checks whether the cluster rejected them.
+Chaosify tests whether Kubernetes *admission controls* actually block what they claim to block. It submits workloads that should be rejected, then checks whether the cluster rejected them.
 
 Verification is a binary question: did the cluster behave as the policy says it should?
 
 ## Result vocabulary
 
-Always use ChaosClaw's exact vocabulary. Never paraphrase or reinterpret verdicts.
+Always use Chaosify's exact vocabulary. Never paraphrase or reinterpret verdicts.
 
 | Result | Meaning |
 |---|---|

@@ -1,4 +1,4 @@
-import * as k8s from '@kubernetes/client-node'
+﻿import * as k8s from '@kubernetes/client-node'
 import { isConflict } from './errors.js'
 
 /**
@@ -24,7 +24,7 @@ export async function ensureNamespace(api: k8s.CoreV1Api, name: string): Promise
  */
 export async function applyResourceQuota(api: k8s.CoreV1Api, namespace: string): Promise<void> {
     const quota: k8s.V1ResourceQuota = {
-        metadata: { name: 'chaosclaw-quota', namespace },
+        metadata: { name: 'chaosify-quota', namespace },
         spec: {
             hard: {
                 pods: '10',

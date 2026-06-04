@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { surveyRbac } from '../../../../src/core/recon/rbac.js'
 
@@ -65,7 +65,7 @@ function saPrincipal(name: string, namespace: string): k8s.V1Subject {
   return { kind: 'ServiceAccount', name, namespace, apiGroup: '' }
 }
 
-const OPTS = { namespace: 'chaosclaw' }
+const OPTS = { namespace: 'chaosify' }
 
 // ---------------------------------------------------------------------------
 // cluster-admin bindings

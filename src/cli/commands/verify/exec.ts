@@ -1,4 +1,4 @@
-// Implements “chaosclaw probe exec” — the runtime binary execution primitive.
+﻿// Implements “chaosify probe exec” — the runtime binary execution primitive.
 // Submits a pod, execs a command inside it, captures exit code + stdout + stderr,
 // and optionally polls a runtime detection tool for a correlated alert.
 import { basename } from 'node:path'
@@ -88,7 +88,7 @@ export function exec(probe: Command): void {
             const scenarioId = `exec:${basename(opts.pod)}`
 
             if (opts.format !== 'json') {
-                header('ChaosClaw Exec')
+                header('Chaosify Exec')
                 field('Cluster Context', clusterContext)
                 field('Pod Manifest', opts.pod)
                 field('Command', opts.run)
@@ -124,7 +124,7 @@ export function exec(probe: Command): void {
 
                 // If an alert source is configured, poll for a correlated alert after the exec.
                 if (opts.alertSource !== 'none') {
-                    const alert = await alertSource.pollForAlert(opts.namespace, 'chaosclaw-test-', windowStart, observationWindowMs)
+                    const alert = await alertSource.pollForAlert(opts.namespace, 'chaosify-test-', windowStart, observationWindowMs)
                     if (alert) {
                         alertJson = JSON.stringify(alert)
                         rawResponse = JSON.stringify({ exitCode: execResult.exitCode, stdout: execResult.stdout, stderr: execResult.stderr, alert })

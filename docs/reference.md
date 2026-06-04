@@ -1,4 +1,4 @@
-# ChaosClaw Reference
+﻿# Chaosify Reference
 
 Complete command reference, flags, exit codes, and OpenClaw skill setup.
 
@@ -12,17 +12,17 @@ Survey the cluster's security posture before submitting any test workloads. All 
 
 ```bash
 # Initialize test namespace with RBAC scoping and ResourceQuota
-chaosclaw setup init
+chaosify setup init
 
 # Individual survey tools
-chaosclaw recon webhooks           # fail-open webhook detection
-chaosclaw recon policies           # Kyverno / Gatekeeper probe, audit-mode detection
-chaosclaw recon psa                # Pod Security Admission labels per namespace
-chaosclaw recon rbac               # cluster-admin bindings, high-privilege service accounts
-chaosclaw recon nodes              # kernel versions, container runtimes, AppArmor presence
-chaosclaw recon network-policies   # per-namespace network segmentation gaps
-chaosclaw recon runtime-agents     # detect Falco, KubeArmor, Tetragon, Tracee
-chaosclaw recon topology           # resource topology graph: ingress paths, secret mounts, SA bindings (requires graphnetes)
+chaosify recon webhooks           # fail-open webhook detection
+chaosify recon policies           # Kyverno / Gatekeeper probe, audit-mode detection
+chaosify recon psa                # Pod Security Admission labels per namespace
+chaosify recon rbac               # cluster-admin bindings, high-privilege service accounts
+chaosify recon nodes              # kernel versions, container runtimes, AppArmor presence
+chaosify recon network-policies   # per-namespace network segmentation gaps
+chaosify recon runtime-agents     # detect Falco, KubeArmor, Tetragon, Tracee
+chaosify recon topology           # resource topology graph: ingress paths, secret mounts, SA bindings (requires graphnetes)
 ```
 
 All recon tools support `--output <file>` and `--format json`.
@@ -30,24 +30,24 @@ All recon tools support `--output <file>` and `--format json`.
 ### Cluster readiness
 
 ```bash
-chaosclaw probe preflight
-chaosclaw probe preflight --context prod-us-east
-chaosclaw probe preflight --output json
+chaosify probe preflight
+chaosify probe preflight --context prod-us-east
+chaosify probe preflight --output json
 ```
 
 ### Verification — manifest admission
 
 ```bash
 # Built-in scenario packs
-chaosclaw probe run --pack preventive-baseline
-chaosclaw probe run --pack runtime-baseline --alert-source falco
-chaosclaw probe run --scenario deny-privileged-container
-chaosclaw probe run --pack preventive-baseline --context prod-us-east
-chaosclaw probe run --pack preventive-baseline --output result.json
+chaosify probe run --pack preventive-baseline
+chaosify probe run --pack runtime-baseline --alert-source falco
+chaosify probe run --scenario deny-privileged-container
+chaosify probe run --pack preventive-baseline --context prod-us-east
+chaosify probe run --pack preventive-baseline --output result.json
 
 # Arbitrary manifest (primary interface for OpenClaw)
-chaosclaw probe run --manifest ./my-pod.yaml --expect rejected
-chaosclaw probe run --manifest ./my-deployment.yaml --expect allowed
+chaosify probe run --manifest ./my-pod.yaml --expect rejected
+chaosify probe run --manifest ./my-deployment.yaml --expect allowed
 ```
 
 ### Verification — execution primitives
@@ -56,20 +56,20 @@ Four composable primitives for OpenClaw-driven free-form pentesting. OpenClaw ge
 
 ```bash
 # exec — create a pod, run a command inside it, capture exit code + stdout + stderr
-chaosclaw probe exec \
+chaosify probe exec \
   --pod ./probe.yaml \
   --run "cat /var/run/secrets/kubernetes.io/serviceaccount/token" \
   --expect succeeded \
   --alert-source falco
 
 # network — probe a target from inside a pod
-chaosclaw probe network \
+chaosify probe network \
   --from ./net-probe.yaml \
   --target http://169.254.169.254/latest/meta-data/ \
   --expect unreachable
 
 # identity — test what a service account is actually allowed to do
-chaosclaw probe identity \
+chaosify probe identity \
   --as default \
   --can list \
   --resource secrets \
@@ -77,7 +77,7 @@ chaosclaw probe identity \
   --expect denied
 
 # detect — exec a threat command and poll a runtime tool for a correlated alert
-chaosclaw probe detect \
+chaosify probe detect \
   --pod ./escape-probe.yaml \
   --run "nsenter --mount=/proc/1/ns/mnt -- cat /etc/shadow" \
   --expect alert_fired \
@@ -90,9 +90,9 @@ See the skills in `skills/` for execution guidance and evidence schema.
 ### Scenario discovery
 
 ```bash
-chaosclaw scenarios list
-chaosclaw scenarios list --pack preventive-baseline
-chaosclaw scenarios show deny-privileged-container
+chaosify scenarios list
+chaosify scenarios list --pack preventive-baseline
+chaosify scenarios show deny-privileged-container
 ```
 
 See [scenarios.md](scenarios.md) for the full scenario catalog.
@@ -100,8 +100,8 @@ See [scenarios.md](scenarios.md) for the full scenario catalog.
 ### Other
 
 ```bash
-chaosclaw version
-chaosclaw help
+chaosify version
+chaosify help
 ```
 
 ---
@@ -112,7 +112,7 @@ chaosclaw help
 |---|---|
 | `--context <name>` | Kubernetes context to use |
 | `--kubeconfig <path>` | kubeconfig path override |
-| `--namespace <name>` | Test namespace override (default: `chaosclaw`) |
+| `--namespace <name>` | Test namespace override (default: `chaosify`) |
 | `--output <path>` | Write JSON evidence artifact to file |
 | `--format <table\|json>` | Output mode |
 | `--verbose` | Include extra diagnostic detail |
@@ -158,14 +158,14 @@ chaosclaw help
 
 ## OpenClaw skills
 
-ChaosClaw ships two OpenClaw skills in `skills/`:
+Chaosify ships two OpenClaw skills in `skills/`:
 
 | Skill | Trigger | Description |
 |---|---|---|
-| `chaosclaw` | "Verify controls on this cluster" | Targeted control verification — recon init, preflight, scenario pack runs, result parsing, failure summarization, fleet fan-out |
+| `chaosify` | "Verify controls on this cluster" | Targeted control verification — recon init, preflight, scenario pack runs, result parsing, failure summarization, fleet fan-out |
 | `openclaw-pentest` | "Pentest this cluster" | Autonomous security assessment — OpenClaw runs recon first, then uses execution primitives to probe the attack surface; produces a prioritized Critical/High/Gap report |
 
-Use `chaosclaw` when you know what controls to run. Use `openclaw-pentest` when you want OpenClaw to assess the cluster's security posture autonomously without being constrained to pre-defined scenarios.
+Use `chaosify` when you know what controls to run. Use `openclaw-pentest` when you want OpenClaw to assess the cluster's security posture autonomously without being constrained to pre-defined scenarios.
 
 ### Register with OpenClaw
 
@@ -175,11 +175,11 @@ Add the skills directory to `~/.openclaw/openclaw.json`:
 {
   "skills": {
     "load": {
-      "extraDirs": ["/path/to/chaosclaw/skills"],
+      "extraDirs": ["/path/to/chaosify/skills"],
       "watch": true
     },
     "entries": {
-      "chaosclaw": { "enabled": true },
+      "chaosify": { "enabled": true },
       "openclaw-pentest": { "enabled": true }
     }
   }
@@ -190,7 +190,7 @@ Add the skills directory to `~/.openclaw/openclaw.json`:
 
 ```
 skills/
-  chaosclaw/
+  chaosify/
     SKILL.md                  ← workflows and safety rules
     references/
       goal-elaboration.md     ← result vocabulary, summarization, fleet aggregation
@@ -202,4 +202,4 @@ skills/
       cli-reference.md        ← commands, exit codes, execution primitives, remediation
 ```
 
-ChaosClaw owns the pass/fail verdict. The skills own the workflow, interpretation, and remediation layer.
+Chaosify owns the pass/fail verdict. The skills own the workflow, interpretation, and remediation layer.

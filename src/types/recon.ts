@@ -1,4 +1,4 @@
-// Types for the recon layer — intentionally separate from the evidence schema used for pass/fail verdicts.
+﻿// Types for the recon layer — intentionally separate from the evidence schema used for pass/fail verdicts.
 
 export type ReconFindingSeverity = 'CRITICAL' | 'HIGH' | 'WARN' | 'INFO' | 'SKIP'
 
@@ -21,7 +21,7 @@ export interface ReconToolResult {
     data: unknown
 }
 
-// Top-level artifact written by `chaosclaw recon all`.
+// Top-level artifact written by `chaosify recon all`.
 export interface ReconReport {
     runId: string
     clusterContext: string

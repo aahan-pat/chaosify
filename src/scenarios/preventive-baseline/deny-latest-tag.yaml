@@ -1,4 +1,4 @@
-id: deny-latest-tag
+﻿id: deny-latest-tag
 version: 1
 name: Latest image tag denied
 description: Attempts to create a pod using the :latest image tag. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-latesttag-test
+    name: chaosify-latesttag-test
   spec:
     containers:
       - name: test

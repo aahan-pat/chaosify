@@ -1,4 +1,4 @@
-// Core types for the alert source abstraction layer.
+﻿// Core types for the alert source abstraction layer.
 // Defined here so adapters and the executor can both import without a circular dependency.
 
 /**
@@ -43,7 +43,7 @@ export interface RuntimeAlertSource {
 
     /**
      * Poll for alerts that match the given correlation criteria within a time window.
-     * @param namespace Test namespace ChaosClaw used for this scenario.
+     * @param namespace Test namespace Chaosify used for this scenario.
      * @param podNamePrefix Prefix used to correlate alerts to this specific test pod.
      * @param windowStart ISO timestamp marking the start of the observation window.
      * @param windowMs How long (in ms) to wait for a matching alert.

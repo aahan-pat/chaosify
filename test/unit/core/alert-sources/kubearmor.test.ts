@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { KubeArmorAlertSource } from '../../../../src/core/alert-sources/adapters/kubearmor.js'
 
@@ -14,9 +14,9 @@ class TestableKubeArmor extends KubeArmorAlertSource {
 
 const source = new TestableKubeArmor({} as k8s.KubeConfig)
 
-const NS = 'chaosclaw-test'
-const PREFIX = 'chaosclaw-test-'
-const POD = 'chaosclaw-test-abc1'
+const NS = 'chaosify-test'
+const PREFIX = 'chaosify-test-'
+const POD = 'chaosify-test-abc1'
 
 // Build a KubeArmor log event with sensible defaults.
 function kubeArmorEvent(

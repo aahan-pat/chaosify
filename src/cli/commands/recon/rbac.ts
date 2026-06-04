@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import { surveyRbac } from '../../../core/recon/rbac.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
@@ -34,7 +34,7 @@ export function rbac(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — RBAC Posture')
+            header('Chaosify Recon — RBAC Posture')
             field('Cluster Context', clusterContext)
             // Inform the operator when system namespace accounts are included in the analysis.
             if (opts.includeSystem) field('Scope', 'including kube-system')

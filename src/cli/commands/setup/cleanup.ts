@@ -1,4 +1,4 @@
-// Implements "chaosclaw setup cleanup" — removes the chaosclaw namespace and all scoped resources.
+﻿// Implements "chaosify setup cleanup" — removes the chaosify namespace and all scoped resources.
 import type { Command } from 'commander'
 import { teardownNamespace, type TeardownResult } from '../../../core/setup/cleanup.js'
 import { header, field, section, indent, blank, badge } from '../../output.js'
@@ -11,7 +11,7 @@ import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from '../recon/utils/shared.
 export function cleanup(setup: Command): void {
     setup
         .command('cleanup')
-        .description('Remove the chaosclaw test namespace and all scoped resources')
+        .description('Remove the chaosify test namespace and all scoped resources')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Test namespace name', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
@@ -32,7 +32,7 @@ export function cleanup(setup: Command): void {
                 process.exit(result.steps.some(s => s.status === 'failed') ? 2 : 0)
             }
 
-            header('ChaosClaw Setup — Namespace Cleanup')
+            header('Chaosify Setup — Namespace Cleanup')
             field('Cluster Context', clusterContext)
             field('Namespace', opts.namespace)
 

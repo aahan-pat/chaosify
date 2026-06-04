@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Command } from 'commander'
 
 // ---------------------------------------------------------------------------
@@ -11,7 +11,7 @@ vi.mock('../../../../src/core/recon/rbac.js', () => ({
 
 vi.mock('../../../../src/cli/commands/recon/utils/shared.js', () => ({
   buildKubeConfig: vi.fn().mockReturnValue({ kc: {}, clusterContext: 'test-cluster' }),
-  DEFAULT_RECON_NAMESPACE: 'chaosclaw',
+  DEFAULT_RECON_NAMESPACE: 'chaosify',
   writeJsonToFile: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -91,10 +91,10 @@ describe('recon rbac — delegation', () => {
     expect(surveyMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'my-ns' }))
   })
 
-  it('uses the default namespace "chaosclaw" when --namespace is omitted', async () => {
+  it('uses the default namespace "chaosify" when --namespace is omitted', async () => {
     surveyMock.mockResolvedValue(OK_RESULT)
     await run(['node', 'recon', 'rbac'])
-    expect(surveyMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosclaw' }))
+    expect(surveyMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosify' }))
   })
 
   it('passes includeSystem: true when --include-system is set', async () => {

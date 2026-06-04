@@ -1,4 +1,4 @@
-export interface RunOpts {
+﻿export interface RunOpts {
     pack?: string
     scenario?: string
     manifest?: string
@@ -19,10 +19,10 @@ export function validateOpts(opts: RunOpts): void {
     if (targetCount === 0) {
         console.error('\nError\n  Missing required target: specify exactly one of --pack, --scenario, or --manifest')
         console.error('\nExamples')
-        console.error('  chaosclaw probe run --pack preventive-baseline')
-        console.error('  chaosclaw probe run --pack runtime-baseline --alert-source none')
-        console.error('  chaosclaw probe run --scenario deny-hostpath')
-        console.error('  chaosclaw probe run --manifest ./my-pod.yaml --expect rejected')
+        console.error('  chaosify probe run --pack preventive-baseline')
+        console.error('  chaosify probe run --pack runtime-baseline --alert-source none')
+        console.error('  chaosify probe run --scenario deny-hostpath')
+        console.error('  chaosify probe run --manifest ./my-pod.yaml --expect rejected')
         process.exit(4)
     }
     if (targetCount > 1) {

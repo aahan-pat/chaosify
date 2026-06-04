@@ -1,4 +1,4 @@
-// Implements “chaosclaw probe network” — the reachability primitive.
+﻿// Implements “chaosify probe network” — the reachability primitive.
 // Submits a pod, probes a target endpoint from inside it, and reports whether
 // the target was reachable. Optionally polls a runtime detection tool.
 //
@@ -104,7 +104,7 @@ export function network(probe: Command): void {
             const scenarioId = `network:${basename(opts.from)}â†’${opts.target}`
 
             if (opts.format !== 'json') {
-                header('ChaosClaw Network')
+                header('Chaosify Network')
                 field('Cluster Context', clusterContext)
                 field('Source Pod', opts.from)
                 field('Target', opts.target)
@@ -151,7 +151,7 @@ export function network(probe: Command): void {
 
                 // If an alert source is configured, poll for a correlated alert after the probe.
                 if (opts.alertSource !== 'none') {
-                    const alert = await alertSource.pollForAlert(opts.namespace, 'chaosclaw-test-', windowStart, observationWindowMs)
+                    const alert = await alertSource.pollForAlert(opts.namespace, 'chaosify-test-', windowStart, observationWindowMs)
                     if (alert) {
                         alertJson = JSON.stringify(alert)
                         rawResponse = JSON.stringify({ protocol, reachable, httpStatus, responseTimeMs, errorType, alert })

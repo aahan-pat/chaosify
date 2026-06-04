@@ -1,21 +1,21 @@
-# ChaosClaw
+﻿# Chaosify
 
-ChaosClaw is a safe, namespace-scoped execution environment for Kubernetes security verification. It proves whether your Kubernetes guardrails actually work — not just whether they are configured — and serves as the controlled execution sandbox for OpenClaw-driven pentesting.
+Chaosify is a safe, namespace-scoped execution environment for Kubernetes security verification. It proves whether your Kubernetes guardrails actually work — not just whether they are configured — and serves as the controlled execution sandbox for OpenClaw-driven pentesting.
 
-All execution is confined to a dedicated, RBAC-enforced test namespace. ChaosClaw structurally cannot touch any other namespace in the cluster.
+All execution is confined to a dedicated, RBAC-enforced test namespace. Chaosify structurally cannot touch any other namespace in the cluster.
 
 ## Installation
 
 Requires Node.js ≥ 22.16.0.
 
 ```bash
-npm install -g chaosclaw
+npm install -g chaosify
 ```
 
 To try without installing:
 
 ```bash
-npx chaosclaw --help
+npx chaosify --help
 ```
 
 ## Docs

@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
@@ -33,7 +33,7 @@ export function nodes(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Node Security Posture')
+            header('Chaosify Recon — Node Security Posture')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {

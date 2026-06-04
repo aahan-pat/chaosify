@@ -1,4 +1,4 @@
-// Implements "chaosclaw scenarios show" — displays full detail for a specific scenario by ID.
+﻿// Implements "chaosify scenarios show" — displays full detail for a specific scenario by ID.
 import type { Command } from 'commander'
 import { ScenarioRegistry, isRuntimeScenario } from '../../../core/scenarios/registry.js'
 import { SCENARIOS_DIR } from '../../../paths.js'
@@ -19,7 +19,7 @@ export function show(scenarios: Command): void {
 
             if (!scenario) {
                 console.error(`\nError\n  No scenario found with id "${id}"`)
-                console.error('  Run "chaosclaw scenarios list" to see all available scenarios')
+                console.error('  Run "chaosify scenarios list" to see all available scenarios')
                 process.exit(4)
             }
 
@@ -28,7 +28,7 @@ export function show(scenarios: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Scenario')
+            header('Chaosify Scenario')
             field('ID', scenario.id)
             field('Name', scenario.name)
             field('Category', scenario.category)

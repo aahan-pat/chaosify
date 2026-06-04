@@ -1,25 +1,25 @@
----
-name: chaosclaw
-description: Kubernetes security testing with ChaosClaw — verify preventive controls, run a full cluster pentest, or investigate specific gaps. Covers control verification (admission policies, PSA, RBAC) and autonomous pentesting (exec, network, identity, detection layer).
+﻿---
+name: chaosify
+description: Kubernetes security testing with Chaosify — verify preventive controls, run a full cluster pentest, or investigate specific gaps. Covers control verification (admission policies, PSA, RBAC) and autonomous pentesting (exec, network, identity, detection layer).
 metadata:
-  install: "symlink or copy this file to ~/.claude/skills/chaosclaw/SKILL.md"
+  install: "symlink or copy this file to ~/.claude/skills/chaosify/SKILL.md"
 ---
 
-TRIGGER when: the user asks to verify Kubernetes controls, run preflight, check admission policies, run a scenario pack, investigate a failed ChaosClaw result, pentest a cluster, run a security assessment, find gaps in cluster security posture, or uses phrases like "pentest this cluster", "check how secure this cluster is", "find what controls are missing", "assess this cluster", "verify guardrails", "control verification", "preventive baseline", or any `deny-*` scenario name.
+TRIGGER when: the user asks to verify Kubernetes controls, run preflight, check admission policies, run a scenario pack, investigate a failed Chaosify result, pentest a cluster, run a security assessment, find gaps in cluster security posture, or uses phrases like "pentest this cluster", "check how secure this cluster is", "find what controls are missing", "assess this cluster", "verify guardrails", "control verification", "preventive baseline", or any `deny-*` scenario name.
 
-SKIP: general Kubernetes debugging unrelated to admission controls or security posture. Skip questions about ChaosClaw internals or source code. Skip if the user is asking you to build or modify ChaosClaw itself.
+SKIP: general Kubernetes debugging unrelated to admission controls or security posture. Skip questions about Chaosify internals or source code. Skip if the user is asking you to build or modify Chaosify itself.
 
 ---
 
-# ChaosClaw Skill
+# Chaosify Skill
 
-ChaosClaw is a local CLI binary (`chaosclaw`) on the machine running this agent. Before any workflow, verify it is present:
+Chaosify is a local CLI binary (`chaosify`) on the machine running this agent. Before any workflow, verify it is present:
 
 ```bash
-chaosclaw version
+chaosify version
 ```
 
-If not found, tell the user to install ChaosClaw and stop. Do not attempt to install it yourself.
+If not found, tell the user to install Chaosify and stop. Do not attempt to install it yourself.
 
 ---
 
@@ -41,19 +41,19 @@ Ask which Kubernetes context to use if not specified. Run `kubectl config get-co
 
 **Step 2 — Initialize the test namespace (first run only).**
 ```bash
-chaosclaw setup init --context <context-name>
+chaosify setup init --context <context-name>
 ```
 Skip if the user confirms it already exists.
 
 **Step 2.5 — Run topology recon (if graphnetes is installed).**
 ```bash
-chaosclaw recon topology --context <context-name> --namespace chaosclaw --output topology.json
+chaosify recon topology --context <context-name> --namespace chaosify --output topology.json
 ```
 If graphnetes is not installed the command returns `status: skip` — continue to Step 3. If it succeeds, read `topology.json`. Use `data.stats.secretMounts`, `data.stats.ingressPaths`, and `data.stats.serviceAccountBindings` to surface high-value targets and inform which scenarios or `--manifest` test cases to prioritize.
 
 **Step 3 — Run preflight.**
 ```bash
-chaosclaw probe preflight --context <context-name>
+chaosify probe preflight --context <context-name>
 ```
 
 | Outcome | Action |
@@ -66,16 +66,16 @@ chaosclaw probe preflight --context <context-name>
 **Step 4 — Run the pack or scenario.**
 ```bash
 # Full preventive baseline
-chaosclaw probe run --pack preventive-baseline --context <context-name> --output chaosclaw-result.json
+chaosify probe run --pack preventive-baseline --context <context-name> --output chaosify-result.json
 
 # Runtime baseline (requires alert source)
-chaosclaw probe run --pack runtime-baseline --alert-source <falco|tetragon|kubearmor|none> --context <context-name> --output chaosclaw-runtime.json
+chaosify probe run --pack runtime-baseline --alert-source <falco|tetragon|kubearmor|none> --context <context-name> --output chaosify-runtime.json
 
 # Single scenario
-chaosclaw probe run --scenario <scenario-id> --context <context-name>
+chaosify probe run --scenario <scenario-id> --context <context-name>
 
 # Arbitrary manifest
-chaosclaw probe run --manifest <path> --expect <rejected|allowed> --context <context-name>
+chaosify probe run --manifest <path> --expect <rejected|allowed> --context <context-name>
 ```
 
 **Step 5 — Parse and summarize results.**
@@ -96,7 +96,7 @@ Use when the user wants a full security assessment across all control layers.
 **Step 0 — Confirm authorization.**
 Ask the user to confirm both:
 1. They own or are authorized to test the target cluster.
-2. They understand this submits test workloads to a live cluster (scoped to the `chaosclaw` namespace).
+2. They understand this submits test workloads to a live cluster (scoped to the `chaosify` namespace).
 
 Do not proceed until both are confirmed.
 
@@ -108,25 +108,25 @@ State the target cluster explicitly. Ask the user to confirm.
 
 **Step 2 — Initialize the test namespace.**
 ```bash
-chaosclaw setup init --context <context-name>
+chaosify setup init --context <context-name>
 ```
 If init fails, surface the error and stop.
 
 **Step 3 — Run topology recon (if graphnetes is installed).**
 ```bash
-chaosclaw recon topology --context <context-name> --namespace <ns> --output topology-<ns>.json
+chaosify recon topology --context <context-name> --namespace <ns> --output topology-<ns>.json
 ```
 Run one call per namespace of interest. If graphnetes is not installed the command returns `status: skip` — continue to Step 4. If it succeeds, read all `topology-*.json` before proceeding.
 
 **Step 4 — Run the full recon survey.**
 ```bash
-chaosclaw recon webhooks         --context <context-name> --output recon-webhooks.json --format json
-chaosclaw recon policies         --context <context-name> --output recon-policies.json --format json
-chaosclaw recon psa              --context <context-name> --output recon-psa.json      --format json
-chaosclaw recon rbac             --context <context-name> --output recon-rbac.json     --format json
-chaosclaw recon nodes            --context <context-name> --output recon-nodes.json    --format json
-chaosclaw recon network-policies --context <context-name> --output recon-netpol.json  --format json
-chaosclaw recon runtime-agents   --context <context-name> --output recon-agents.json  --format json
+chaosify recon webhooks         --context <context-name> --output recon-webhooks.json --format json
+chaosify recon policies         --context <context-name> --output recon-policies.json --format json
+chaosify recon psa              --context <context-name> --output recon-psa.json      --format json
+chaosify recon rbac             --context <context-name> --output recon-rbac.json     --format json
+chaosify recon nodes            --context <context-name> --output recon-nodes.json    --format json
+chaosify recon network-policies --context <context-name> --output recon-netpol.json  --format json
+chaosify recon runtime-agents   --context <context-name> --output recon-agents.json  --format json
 ```
 Read all output files alongside any `topology-*.json` files from Step 3 before proceeding.
 
@@ -143,7 +143,7 @@ Store the alert source now. Use it consistently for all Step 6 calls.
 
 ```bash
 # RBAC over-privilege — one call per flagged SA
-chaosclaw probe identity \
+chaosify probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \
@@ -153,7 +153,7 @@ chaosclaw probe identity \
   --output identity-<sa>.json
 
 # Network segmentation gap — one call per flagged namespace/target
-chaosclaw probe network \
+chaosify probe network \
   --from <probe-pod.yaml> \
   --target <url-or-host:port> \
   --expect unreachable \
@@ -162,7 +162,7 @@ chaosclaw probe network \
   --output network-<target>.json
 
 # Exec-based attack path (escape, token theft, etc.)
-chaosclaw probe exec \
+chaosify probe exec \
   --pod <pod.yaml> \
   --run "<command>" \
   --expect <succeeded|failed|denied> \
@@ -171,7 +171,7 @@ chaosclaw probe exec \
   --output exec-<name>.json
 
 # Runtime detection gap
-chaosclaw probe detect \
+chaosify probe detect \
   --pod <pod.yaml> \
   --run "<threat-command>" \
   --expect <alert_fired|action_blocked|no_alert> \
@@ -217,21 +217,21 @@ After the report:
 ### Setup commands
 
 ```bash
-chaosclaw setup init    --context <ctx>
-chaosclaw setup cleanup --context <ctx>
+chaosify setup init    --context <ctx>
+chaosify setup cleanup --context <ctx>
 ```
 
 ### Recon commands
 
 ```bash
-chaosclaw recon webhooks          --context <ctx>
-chaosclaw recon policies          --context <ctx>
-chaosclaw recon psa               --context <ctx>
-chaosclaw recon rbac              --context <ctx> [--include-system]
-chaosclaw recon nodes             --context <ctx>
-chaosclaw recon network-policies  --context <ctx>
-chaosclaw recon runtime-agents    --context <ctx>
-chaosclaw recon topology          --context <ctx> --namespace <ns> [--graph <path>]
+chaosify recon webhooks          --context <ctx>
+chaosify recon policies          --context <ctx>
+chaosify recon psa               --context <ctx>
+chaosify recon rbac              --context <ctx> [--include-system]
+chaosify recon nodes             --context <ctx>
+chaosify recon network-policies  --context <ctx>
+chaosify recon runtime-agents    --context <ctx>
+chaosify recon topology          --context <ctx> --namespace <ns> [--graph <path>]
 ```
 
 `topology` requires [graphnetes](https://github.com/aahan-pat/graphnetes) on PATH. Returns a SKIP finding if not installed — survey continues.
@@ -241,7 +241,7 @@ Recon finding severities: `CRITICAL` / `HIGH` / `WARN` / `INFO` / `SKIP`
 ### Identity command
 
 ```bash
-chaosclaw probe identity \
+chaosify probe identity \
   --as <sa-name> \
   --can <verb> \
   --resource <resource> \          # use slash notation for subresources: pods/exec
@@ -270,9 +270,9 @@ Protocol inferred from target: `http://` → HTTP, `https://` → HTTPS, `host:p
 ### Scenario discovery
 
 ```bash
-chaosclaw scenarios list
-chaosclaw scenarios list --pack preventive-baseline
-chaosclaw scenarios show <scenario-id>
+chaosify scenarios list
+chaosify scenarios list --pack preventive-baseline
+chaosify scenarios show <scenario-id>
 ```
 
 ### Preventive baseline scenarios
@@ -468,7 +468,7 @@ Overall posture: [Critical / High / Medium / Passing]
 
 - Always confirm the cluster context. Never assume the current context is the intended target.
 - Never skip preflight (control verification) or init + authorization confirmation (pentest).
-- All execution is confined to the `chaosclaw` namespace — RBAC-bound, cannot affect other namespaces.
+- All execution is confined to the `chaosify` namespace — RBAC-bound, cannot affect other namespaces.
 - A pentest does not modify policies, webhooks, application workloads, or cluster config.
 - If cleanup reports a partial failure, surface the `kubectl delete` command before the next primitive.
 - `probe identity` requires `create subjectaccessreviews`. If denied (exit code 2), skip identity checks — do not treat as a control finding.

@@ -1,33 +1,33 @@
-# Case Study: Kubernetes Goat on minikube
+﻿# Case Study: Kubernetes Goat on minikube
 
 **Date:** 2026-05-28  
 **Cluster:** minikube  
 **Target environment:** [Kubernetes Goat](https://madhuakula.com/kubernetes-goat/) — a deliberately vulnerable Kubernetes environment  
-**Tool version:** ChaosClaw v0.1.0  
+**Tool version:** Chaosify v0.1.0  
 **Overall posture:** Critical
 
 ---
 
 ## Setup
 
-Kubernetes Goat is an intentionally misconfigured Kubernetes environment used for security training and tooling validation. It ships with several application namespaces (`big-monolith`, `secure-middleware`) and no security controls configured — no policy engine, no runtime detection agents, and no network policies. This makes it an ideal environment for validating that ChaosClaw correctly identifies a fully unprotected cluster.
+Kubernetes Goat is an intentionally misconfigured Kubernetes environment used for security training and tooling validation. It ships with several application namespaces (`big-monolith`, `secure-middleware`) and no security controls configured — no policy engine, no runtime detection agents, and no network policies. This makes it an ideal environment for validating that Chaosify correctly identifies a fully unprotected cluster.
 
-ChaosClaw was run against Kubernetes Goat deployed on a local minikube instance. All activity was confined to the `chaosclaw` test namespace via RBAC-enforced isolation.
+Chaosify was run against Kubernetes Goat deployed on a local minikube instance. All activity was confined to the `chaosify` test namespace via RBAC-enforced isolation.
 
 ---
 
 ## Recon
 
-The first step was a full cluster survey. ChaosClaw surveyed eight dimensions — webhooks, policies, PSA, RBAC, nodes, network policies, runtime agents, and topology — in under five seconds.
+The first step was a full cluster survey. Chaosify surveyed eight dimensions — webhooks, policies, PSA, RBAC, nodes, network policies, runtime agents, and topology — in under five seconds.
 
 ```bash
-chaosclaw recon webhooks         --context minikube --output recon-webhooks.json --format json
-chaosclaw recon policies         --context minikube --output recon-policies.json --format json
-chaosclaw recon psa              --context minikube --output recon-psa.json      --format json
-chaosclaw recon rbac             --context minikube --output recon-rbac.json     --format json
-chaosclaw recon nodes            --context minikube --output recon-nodes.json    --format json
-chaosclaw recon network-policies --context minikube --output recon-netpol.json  --format json
-chaosclaw recon runtime-agents   --context minikube --output recon-agents.json  --format json
+chaosify recon webhooks         --context minikube --output recon-webhooks.json --format json
+chaosify recon policies         --context minikube --output recon-policies.json --format json
+chaosify recon psa              --context minikube --output recon-psa.json      --format json
+chaosify recon rbac             --context minikube --output recon-rbac.json     --format json
+chaosify recon nodes            --context minikube --output recon-nodes.json    --format json
+chaosify recon network-policies --context minikube --output recon-netpol.json  --format json
+chaosify recon runtime-agents   --context minikube --output recon-agents.json  --format json
 ```
 
 **Summary: 1 Critical, 3 High, 2 Warn**
@@ -41,7 +41,7 @@ chaosclaw recon runtime-agents   --context minikube --output recon-agents.json  
 | Warn | `psa` | 5 user namespaces with no Pod Security Admission labels |
 | Warn | `rbac` | `cluster-admin` bound to non-system principal (`kubeadm:cluster-admins`) |
 
-The recon report established a complete picture before any test workloads were submitted: the cluster had no admission-level enforcement, no runtime detection, and unrestricted network traffic between namespaces. With this context, ChaosClaw identified three high-priority attack paths to probe.
+The recon report established a complete picture before any test workloads were submitted: the cluster had no admission-level enforcement, no runtime detection, and unrestricted network traffic between namespaces. With this context, Chaosify identified three high-priority attack paths to probe.
 
 ---
 
@@ -90,24 +90,24 @@ This is the combination that produces a **Critical** classification: the attack 
 
 ---
 
-### Control verification — ChaosClaw RBAC isolation held
+### Control verification — Chaosify RBAC isolation held
 
 **Primitive:** `probe identity`  
-**Service account:** `chaosclaw-runner`  
+**Service account:** `chaosify-runner`  
 **Check:** `create pods` in `default` namespace  
 **Expected:** `denied`  
 **Observed:** `denied`
 
 ```json
 {
-  "scenarioId": "identity:chaosclaw-runner/create/pods",
+  "scenarioId": "identity:chaosify-runner/create/pods",
   "status": "Pass",
   "expectedOutcome": "denied",
   "observedOutcome": "denied"
 }
 ```
 
-Throughout the run, ChaosClaw's own service account remained scoped to the `chaosclaw` namespace. It could not create pods, read secrets, or affect any other namespace. This confirms the safety model held even on a cluster with no admission controls — isolation is enforced at the Kubernetes RBAC level, not by convention.
+Throughout the run, Chaosify's own service account remained scoped to the `chaosify` namespace. It could not create pods, read secrets, or affect any other namespace. This confirms the safety model held even on a cluster with no admission controls — isolation is enforced at the Kubernetes RBAC level, not by convention.
 
 ---
 
@@ -120,15 +120,15 @@ Throughout the run, ChaosClaw's own service account remained scoped to the `chao
 | **High** | Sensitive file read (`/etc/shadow`) succeeded from inside a container |
 | **High** | No admission policy engine — privileged and hostPID workloads admitted without restriction |
 | **High** | No NetworkPolicies in 5 namespaces — unrestricted lateral movement between pods |
-| **Verified** | ChaosClaw RBAC namespace isolation confirmed |
+| **Verified** | Chaosify RBAC namespace isolation confirmed |
 
 ---
 
 ## What this demonstrates
 
-This run validates ChaosClaw against a known-bad cluster and confirms two things:
+This run validates Chaosify against a known-bad cluster and confirms two things:
 
-**Detection accuracy.** ChaosClaw correctly identified every significant gap in the cluster — no false negatives on a cluster with no controls at all. The recon layer surfaced the full attack surface before a single test workload was submitted, and the execution primitives confirmed each gap with live cluster evidence.
+**Detection accuracy.** Chaosify correctly identified every significant gap in the cluster — no false negatives on a cluster with no controls at all. The recon layer surfaced the full attack surface before a single test workload was submitted, and the execution primitives confirmed each gap with live cluster evidence.
 
 **Evidence quality.** Every finding is backed by a structured JSON artifact with the exact command, exit code, stdout, and cleanup status. This is verifiable, reproducible evidence — not a scanner score or a static configuration check.
 

@@ -1,4 +1,4 @@
-// Implements "chaosclaw setup init" — creates the chaosclaw namespace and applies RBAC scoping.
+﻿// Implements "chaosify setup init" — creates the chaosify namespace and applies RBAC scoping.
 import type { Command } from 'commander'
 import chalk from 'chalk'
 import { initNamespace, type InitResult } from '../../../core/setup/init.js'
@@ -12,7 +12,7 @@ import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from '../recon/utils/shared.
 export function init(setup: Command): void {
     setup
         .command('init')
-        .description('Initialize the chaosclaw test namespace with RBAC scoping and resource quota')
+        .description('Initialize the chaosify test namespace with RBAC scoping and resource quota')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Test namespace name', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
@@ -33,7 +33,7 @@ export function init(setup: Command): void {
                 process.exit(result.steps.some(s => s.status === 'failed') ? 2 : 0)
             }
 
-            header('ChaosClaw Setup — Namespace Init')
+            header('Chaosify Setup — Namespace Init')
             field('Cluster Context', clusterContext)
             field('Namespace', opts.namespace)
 

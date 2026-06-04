@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Command } from 'commander'
 
 // ---------------------------------------------------------------------------
@@ -11,7 +11,7 @@ vi.mock('../../../../src/core/setup/init.js', () => ({
 
 vi.mock('../../../../src/cli/commands/recon/utils/shared.js', () => ({
   buildKubeConfig: vi.fn().mockReturnValue({ kc: {}, clusterContext: 'test-cluster' }),
-  DEFAULT_RECON_NAMESPACE: 'chaosclaw',
+  DEFAULT_RECON_NAMESPACE: 'chaosify',
 }))
 
 import { init } from '../../../../src/cli/commands/setup/init.js'
@@ -26,14 +26,14 @@ const initMock = initNamespace as ReturnType<typeof vi.fn>
 function successResult() {
   return Promise.resolve({
     clusterContext: 'test-cluster',
-    namespace: 'chaosclaw',
+    namespace: 'chaosify',
     alreadyExisted: false,
     steps: [
-      { name: 'Namespace chaosclaw', status: 'ok' },
+      { name: 'Namespace chaosify', status: 'ok' },
       { name: 'ResourceQuota', status: 'ok' },
-      { name: 'ServiceAccount chaosclaw-runner', status: 'ok' },
-      { name: 'Role chaosclaw-runner', status: 'ok' },
-      { name: 'RoleBinding chaosclaw-runner', status: 'ok' },
+      { name: 'ServiceAccount chaosify-runner', status: 'ok' },
+      { name: 'Role chaosify-runner', status: 'ok' },
+      { name: 'RoleBinding chaosify-runner', status: 'ok' },
     ],
   })
 }
@@ -41,7 +41,7 @@ function successResult() {
 function failedStepResult() {
   return Promise.resolve({
     clusterContext: 'test-cluster',
-    namespace: 'chaosclaw',
+    namespace: 'chaosify',
     alreadyExisted: false,
     steps: [{ name: 'ResourceQuota', status: 'failed', detail: 'permission denied' }],
   })
@@ -99,10 +99,10 @@ describe('setup init — success', () => {
     expect(initMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'my-ns' }))
   })
 
-  it('uses the default namespace "chaosclaw" when --namespace is omitted', async () => {
+  it('uses the default namespace "chaosify" when --namespace is omitted', async () => {
     initMock.mockImplementation(successResult)
     await run(['node', 'setup', 'init'])
-    expect(initMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosclaw' }))
+    expect(initMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosify' }))
   })
 
   it('forwards --context to initNamespace', async () => {
@@ -171,9 +171,9 @@ describe('setup init — namespace already existed', () => {
   it('still exits 0 when the namespace already existed and all steps complete', async () => {
     initMock.mockResolvedValue({
       clusterContext: 'test-cluster',
-      namespace: 'chaosclaw',
+      namespace: 'chaosify',
       alreadyExisted: true,
-      steps: [{ name: 'Namespace chaosclaw', status: 'already-existed' }],
+      steps: [{ name: 'Namespace chaosify', status: 'already-existed' }],
     })
     await run(['node', 'setup', 'init'])
     expect(exitCode).toBe(0)

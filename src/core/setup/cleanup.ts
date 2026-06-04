@@ -1,4 +1,4 @@
-import * as k8s from '@kubernetes/client-node'
+﻿import * as k8s from '@kubernetes/client-node'
 import { coreV1Api, rbacV1Api } from '../kube/client.js'
 import { isNotFound } from '../kube/errors.js'
 import { runStep, type Step } from '../utils/step.js'
@@ -20,7 +20,7 @@ async function deleteIfExists(fn: () => Promise<unknown>): Promise<void> {
 }
 
 /**
- * Deletes the chaosclaw namespace and all scoped resources created by initNamespace. Idempotent.
+ * Deletes the chaosify namespace and all scoped resources created by initNamespace. Idempotent.
  * @param kc Loaded kubeconfig to use for all API calls.
  * @param options Options containing namespace and optional context.
  */
@@ -32,10 +32,10 @@ export async function teardownNamespace(kc: k8s.KubeConfig, options: ReconOption
 
     // Delete namespace-scoped resources in reverse-init order, then delete the namespace itself.
     const steps: Step[] = [
-        await runStep('RoleBinding chaosclaw-runner', () => deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: 'chaosclaw-runner', namespace: ns }))),
-        await runStep('Role chaosclaw-runner', () => deleteIfExists(() => rbac.deleteNamespacedRole({ name: 'chaosclaw-runner', namespace: ns }))),
-        await runStep('ServiceAccount chaosclaw-runner', () => deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: 'chaosclaw-runner', namespace: ns }))),
-        await runStep('ResourceQuota chaosclaw-quota', () => deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: 'chaosclaw-quota', namespace: ns }))),
+        await runStep('RoleBinding chaosify-runner', () => deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: 'chaosify-runner', namespace: ns }))),
+        await runStep('Role chaosify-runner', () => deleteIfExists(() => rbac.deleteNamespacedRole({ name: 'chaosify-runner', namespace: ns }))),
+        await runStep('ServiceAccount chaosify-runner', () => deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: 'chaosify-runner', namespace: ns }))),
+        await runStep('ResourceQuota chaosify-quota', () => deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: 'chaosify-quota', namespace: ns }))),
         await runStep(`Namespace ${ns}`, () => deleteIfExists(() => core.deleteNamespace({ name: ns }))),
     ]
 

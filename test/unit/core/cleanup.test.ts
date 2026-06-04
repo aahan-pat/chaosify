@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { CleanupManager } from '../../../src/core/teardown/cleanup.js'
 import type { CleanupTarget } from '../../../src/core/teardown/cleanup.js'
@@ -14,9 +14,9 @@ function makeKc(deleteImpl: () => Promise<unknown> = () => Promise.resolve()): k
   } as unknown as k8s.KubeConfig
 }
 
-const POD: CleanupTarget = { kind: 'Pod', name: 'chaosclaw-test-abc', namespace: 'chaosclaw' }
-const POD2: CleanupTarget = { kind: 'Pod', name: 'chaosclaw-test-def', namespace: 'chaosclaw' }
-const POD3: CleanupTarget = { kind: 'Pod', name: 'chaosclaw-test-ghi', namespace: 'chaosclaw' }
+const POD: CleanupTarget = { kind: 'Pod', name: 'chaosify-test-abc', namespace: 'chaosify' }
+const POD2: CleanupTarget = { kind: 'Pod', name: 'chaosify-test-def', namespace: 'chaosify' }
+const POD3: CleanupTarget = { kind: 'Pod', name: 'chaosify-test-ghi', namespace: 'chaosify' }
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -120,8 +120,8 @@ describe('CleanupManager', () => {
       await manager.cleanup([POD])
 
       expect(deleteNamespacedPod).toHaveBeenCalledWith({
-        name: 'chaosclaw-test-abc',
-        namespace: 'chaosclaw',
+        name: 'chaosify-test-abc',
+        namespace: 'chaosify',
       })
     })
   })

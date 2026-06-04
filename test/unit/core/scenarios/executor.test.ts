@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { ScenarioExecutor } from '../../../../src/core/scenarios/exec/executor.js'
 import type { ScenarioDefinition } from '../../../../src/types/scenario.js'
@@ -31,7 +31,7 @@ function makeScenario(overrides: Partial<ScenarioDefinition> = {}): ScenarioDefi
 
 // Build a mock KubeConfig whose CoreV1Api is fully controllable.
 function makeKc(
-  createImpl: () => Promise<k8s.V1Pod> = () => Promise.resolve({ metadata: { name: 'chaosclaw-test-abc1' } }),
+  createImpl: () => Promise<k8s.V1Pod> = () => Promise.resolve({ metadata: { name: 'chaosify-test-abc1' } }),
 ): { kc: k8s.KubeConfig; createNamespacedPod: ReturnType<typeof vi.fn> } {
   const createNamespacedPod = vi.fn(createImpl)
   const kc = {
@@ -45,7 +45,7 @@ function admissionError(statusCode: number): Error {
   return Object.assign(new Error(`HTTP ${statusCode}`), { response: { statusCode } })
 }
 
-const OPTS = { namespace: 'chaosclaw-test', timeoutMs: 2_000 }
+const OPTS = { namespace: 'chaosify-test', timeoutMs: 2_000 }
 
 // ---------------------------------------------------------------------------
 // Admission outcomes
@@ -53,15 +53,15 @@ const OPTS = { namespace: 'chaosclaw-test', timeoutMs: 2_000 }
 
 describe('ScenarioExecutor.execute() — admission outcomes', () => {
   it('returns admission_allowed when the pod is created successfully', async () => {
-    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosclaw-test-abc1' } }))
+    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosify-test-abc1' } }))
     const result = await new ScenarioExecutor(kc).execute(makeScenario(), OPTS)
     expect(result.observedOutcome).toBe('admission_allowed')
   })
 
   it('captures the server-assigned pod name in createdResourceName for cleanup', async () => {
-    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosclaw-test-xyz9' } }))
+    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosify-test-xyz9' } }))
     const result = await new ScenarioExecutor(kc).execute(makeScenario(), OPTS)
-    expect(result.createdResourceName).toBe('chaosclaw-test-xyz9')
+    expect(result.createdResourceName).toBe('chaosify-test-xyz9')
   })
 
   it('returns admission_rejected when the API returns 403 (RBAC or webhook denial)', async () => {
@@ -147,19 +147,19 @@ describe('ScenarioExecutor.execute() — timeout', () => {
 describe('ScenarioExecutor.execute() — namespace injection', () => {
   it('injects the target namespace and sets generateName before submission', async () => {
     const { kc, createNamespacedPod } = makeKc(() =>
-      Promise.resolve({ metadata: { name: 'chaosclaw-test-inj1' } }),
+      Promise.resolve({ metadata: { name: 'chaosify-test-inj1' } }),
     )
     await new ScenarioExecutor(kc).execute(makeScenario(), OPTS)
     const submitted = createNamespacedPod.mock.calls[0]?.[0]?.body as k8s.V1Pod
-    expect(submitted.metadata?.namespace).toBe('chaosclaw-test')
-    expect(submitted.metadata?.generateName).toBe('chaosclaw-test-')
+    expect(submitted.metadata?.namespace).toBe('chaosify-test')
+    expect(submitted.metadata?.generateName).toBe('chaosify-test-')
     // The original name is cleared so generateName takes over.
     expect(submitted.metadata?.name).toBeUndefined()
   })
 
   it('preserves other metadata fields when injecting namespace', async () => {
     const { kc, createNamespacedPod } = makeKc(() =>
-      Promise.resolve({ metadata: { name: 'chaosclaw-test-inj2' } }),
+      Promise.resolve({ metadata: { name: 'chaosify-test-inj2' } }),
     )
     const scenario = makeScenario({
       manifest: {
@@ -176,12 +176,12 @@ describe('ScenarioExecutor.execute() — namespace injection', () => {
 
   it('handles manifests with no metadata by creating one', async () => {
     const { kc, createNamespacedPod } = makeKc(() =>
-      Promise.resolve({ metadata: { name: 'chaosclaw-test-inj3' } }),
+      Promise.resolve({ metadata: { name: 'chaosify-test-inj3' } }),
     )
     const scenario = makeScenario({ manifest: { kind: 'Pod', apiVersion: 'v1' } })
     await new ScenarioExecutor(kc).execute(scenario, OPTS)
     const submitted = createNamespacedPod.mock.calls[0]?.[0]?.body as k8s.V1Pod
-    expect(submitted.metadata?.namespace).toBe('chaosclaw-test')
+    expect(submitted.metadata?.namespace).toBe('chaosify-test')
   })
 })
 
@@ -191,7 +191,7 @@ describe('ScenarioExecutor.execute() — namespace injection', () => {
 
 describe('ScenarioExecutor.execute() — evidence fields', () => {
   it('records valid ISO timestamps for startedAt and endedAt', async () => {
-    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosclaw-test-t1' } }))
+    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosify-test-t1' } }))
     const result = await new ScenarioExecutor(kc).execute(makeScenario(), OPTS)
     expect(() => new Date(result.startedAt)).not.toThrow()
     expect(() => new Date(result.endedAt)).not.toThrow()
@@ -199,11 +199,11 @@ describe('ScenarioExecutor.execute() — evidence fields', () => {
   })
 
   it('stores the post-injection manifest in manifestSnapshot, not the original', async () => {
-    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosclaw-test-t2' } }))
+    const { kc } = makeKc(() => Promise.resolve({ metadata: { name: 'chaosify-test-t2' } }))
     const result = await new ScenarioExecutor(kc).execute(makeScenario(), OPTS)
     const snapshot = JSON.parse(result.manifestSnapshot) as k8s.V1Pod
     // Snapshot must reflect the injected namespace, not the "wrong-ns" in the original fixture.
-    expect(snapshot.metadata?.namespace).toBe('chaosclaw-test')
+    expect(snapshot.metadata?.namespace).toBe('chaosify-test')
   })
 
   it('does not set createdResourceName on admission_rejected', async () => {

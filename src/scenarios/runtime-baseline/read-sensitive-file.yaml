@@ -1,4 +1,4 @@
-id: detect-read-sensitive-file
+﻿id: detect-read-sensitive-file
 version: 1
 name: Detect read of sensitive file
 description: Spawns a pod and reads /etc/shadow inside it. A runtime security tool should fire an alert for this sensitive file access.
@@ -11,7 +11,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    generateName: chaosclaw-runtime-
+    generateName: chaosify-runtime-
   spec:
     restartPolicy: Never
     containers:

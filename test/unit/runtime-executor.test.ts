@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { RuntimeScenarioExecutor } from '../../src/core/scenarios/exec/runtime-executor.js'
 import type { RuntimeAlertSource, RuntimeAlert } from '../../src/core/scenarios/exec/runtime-executor.js'
@@ -57,8 +57,8 @@ class TestableRuntimeExecutor extends RuntimeScenarioExecutor {
 const ALERT: RuntimeAlert = {
   source: 'falco',
   ruleName: 'Terminal shell in container',
-  namespace: 'chaosclaw-test',
-  podName: 'chaosclaw-test-x4f7b',
+  namespace: 'chaosify-test',
+  podName: 'chaosify-test-x4f7b',
   triggeredAt: new Date().toISOString(),
   raw: '{"rule":"Terminal shell in container"}',
 }
@@ -94,7 +94,7 @@ function makeAlertSource(
   }
 }
 
-const BASE_OPTIONS = { namespace: 'chaosclaw-test', observationWindowMs: 500, timeoutMs: 2_000 }
+const BASE_OPTIONS = { namespace: 'chaosify-test', observationWindowMs: 500, timeoutMs: 2_000 }
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -104,7 +104,7 @@ describe('RuntimeScenarioExecutor', () => {
   describe('execute()', () => {
     it('returns alert_fired when the alert source fires within the window', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc1' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc1' } }),
       )
       const alertSource = makeAlertSource(() => Promise.resolve(ALERT))
       const executor = new TestableRuntimeExecutor(kc, alertSource)
@@ -113,12 +113,12 @@ describe('RuntimeScenarioExecutor', () => {
 
       expect(result.observedOutcome).toBe('alert_fired')
       expect(result.alertDetail).toEqual(ALERT)
-      expect(result.createdResourceName).toBe('chaosclaw-test-abc1')
+      expect(result.createdResourceName).toBe('chaosify-test-abc1')
     })
 
     it('returns no_alert when the observation window closes without an alert', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc2' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc2' } }),
       )
       const alertSource = makeAlertSource(() => Promise.resolve(null))
       const executor = new TestableRuntimeExecutor(kc, alertSource)
@@ -127,7 +127,7 @@ describe('RuntimeScenarioExecutor', () => {
 
       expect(result.observedOutcome).toBe('no_alert')
       expect(result.alertDetail).toBeUndefined()
-      expect(result.createdResourceName).toBe('chaosclaw-test-abc2')
+      expect(result.createdResourceName).toBe('chaosify-test-abc2')
     })
 
     it('returns api_error when the Kubernetes API rejects the pod', async () => {
@@ -165,7 +165,7 @@ describe('RuntimeScenarioExecutor', () => {
 
     it('returns api_error with createdResourceName when the alert source throws', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc3' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc3' } }),
       )
       const alertSource = makeAlertSource(() => Promise.reject(new Error('falco unavailable')))
       const executor = new TestableRuntimeExecutor(kc, alertSource)
@@ -175,27 +175,27 @@ describe('RuntimeScenarioExecutor', () => {
       expect(result.observedOutcome).toBe('api_error')
       expect(result.rawResponse).toContain('falco unavailable')
       // Pod was created before the observe phase failed — name must be preserved for cleanup
-      expect(result.createdResourceName).toBe('chaosclaw-test-abc3')
+      expect(result.createdResourceName).toBe('chaosify-test-abc3')
     })
 
     it('injects namespace and generateName into the submitted manifest', async () => {
       const { kc, createNamespacedPod } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc4' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc4' } }),
       )
       const executor = new TestableRuntimeExecutor(kc, makeAlertSource())
 
       await executor.execute(SCENARIO, BASE_OPTIONS)
 
       const submittedPod = createNamespacedPod.mock.calls[0]?.[0]?.body as k8s.V1Pod
-      expect(submittedPod.metadata?.namespace).toBe('chaosclaw-test')
-      expect(submittedPod.metadata?.generateName).toBe('chaosclaw-test-')
+      expect(submittedPod.metadata?.namespace).toBe('chaosify-test')
+      expect(submittedPod.metadata?.generateName).toBe('chaosify-test-')
       // Original name should be cleared so generateName takes over
       expect(submittedPod.metadata?.name).toBeUndefined()
     })
 
-    it('uses chaosclaw-test- as the pod name prefix when polling for alerts', async () => {
+    it('uses chaosify-test- as the pod name prefix when polling for alerts', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc5' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc5' } }),
       )
       const alertSource = makeAlertSource(() => Promise.resolve(ALERT))
       const executor = new TestableRuntimeExecutor(kc, alertSource)
@@ -203,12 +203,12 @@ describe('RuntimeScenarioExecutor', () => {
       await executor.execute(SCENARIO, BASE_OPTIONS)
 
       const pollCall = (alertSource.pollForAlert as ReturnType<typeof vi.fn>).mock.calls[0]
-      expect(pollCall?.[1]).toBe('chaosclaw-test-')
+      expect(pollCall?.[1]).toBe('chaosify-test-')
     })
 
     it('passes the correct namespace to pollForAlert', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc6' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc6' } }),
       )
       const alertSource = makeAlertSource(() => Promise.resolve(null))
       const executor = new TestableRuntimeExecutor(kc, alertSource)
@@ -221,7 +221,7 @@ describe('RuntimeScenarioExecutor', () => {
 
     it('records startedAt and endedAt as ISO timestamps', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc7' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc7' } }),
       )
       const executor = new TestableRuntimeExecutor(kc, makeAlertSource())
 
@@ -236,7 +236,7 @@ describe('RuntimeScenarioExecutor', () => {
 
     it('preserves manifestSnapshot as the injected manifest JSON', async () => {
       const { kc } = makeKc(() =>
-        Promise.resolve({ metadata: { name: 'chaosclaw-test-abc8' } }),
+        Promise.resolve({ metadata: { name: 'chaosify-test-abc8' } }),
       )
       const executor = new TestableRuntimeExecutor(kc, makeAlertSource())
 
@@ -245,7 +245,7 @@ describe('RuntimeScenarioExecutor', () => {
       const snapshot = JSON.parse(result.manifestSnapshot) as Record<string, unknown>
       const meta = snapshot['metadata'] as Record<string, unknown>
       // Snapshot should reflect the injected namespace, not the original
-      expect(meta['namespace']).toBe('chaosclaw-test')
+      expect(meta['namespace']).toBe('chaosify-test')
     })
   })
 })

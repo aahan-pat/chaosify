@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import chalk from 'chalk'
 import { surveyPsa, type NamespacePsaStatus } from '../../../core/recon/psa.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
@@ -34,7 +34,7 @@ export function psa(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Pod Security Admission')
+            header('Chaosify Recon — Pod Security Admission')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {

@@ -1,4 +1,4 @@
-// Low-level utilities shared by probe exec, probe network, and probe detect.
+﻿// Low-level utilities shared by probe exec, probe network, and probe detect.
 // Handles pod lifecycle (submit, wait, exec with output capture) independently
 // of any scenario schema or alert observation logic.
 import * as k8s from '@kubernetes/client-node'
@@ -154,7 +154,7 @@ export function injectNamespace(
     const meta = (manifest['metadata'] as Record<string, unknown> | undefined) ?? {}
     return {
         ...manifest,
-        metadata: { ...meta, namespace, generateName: 'chaosclaw-test-', name: undefined },
+        metadata: { ...meta, namespace, generateName: 'chaosify-test-', name: undefined },
     }
 }
 

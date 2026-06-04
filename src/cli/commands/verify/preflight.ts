@@ -1,4 +1,4 @@
-// Implements “chaosclaw probe preflight” — runs PreflightEngine and renders results as a table or JSON.
+﻿// Implements “chaosify probe preflight” — runs PreflightEngine and renders results as a table or JSON.
 import type { Command } from 'commander'
 import { PreflightEngine } from '../../../core/setup/preflight.js'
 import { header, field, section, indent, preflightLabel, blank } from '../../output.js'
@@ -32,7 +32,7 @@ export function preflight(probe: Command): void {
                 process.exit(result.passed ? 0 : 3)
             }
 
-            header('ChaosClaw Preflight')
+            header('Chaosify Preflight')
             field('Cluster Context', result.clusterContext)
             field('Test Namespace', result.namespace)
 
@@ -56,7 +56,7 @@ export function preflight(probe: Command): void {
                 blank()
                 section('Next')
                 const contextFlag = opts.context ? ` --context ${opts.context}` : ''
-                indent(`chaosclaw probe run --pack preventive-baseline${contextFlag}`)
+                indent(`chaosify probe run --pack preventive-baseline${contextFlag}`)
             }
 
             blank()

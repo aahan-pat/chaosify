@@ -1,4 +1,4 @@
-import * as k8s from '@kubernetes/client-node'
+﻿import * as k8s from '@kubernetes/client-node'
 import { coreV1Api, rbacV1Api } from '../kube/client.js'
 import { isConflict } from '../kube/errors.js'
 import { runStep, type Step } from '../utils/step.js'
@@ -14,21 +14,21 @@ export interface InitResult {
 // Applies the ResourceQuota, patching on 409 to keep limits current, then re-throws so runStep() maps it to already-existed.
 async function applyQuota(core: k8s.CoreV1Api, namespace: string): Promise<void> {
     const body: k8s.V1ResourceQuota = {
-        metadata: { name: 'chaosclaw-quota', namespace },
+        metadata: { name: 'chaosify-quota', namespace },
         spec: { hard: { pods: '10', 'requests.cpu': '2', 'requests.memory': '2Gi', 'limits.cpu': '4', 'limits.memory': '4Gi' } }
     }
     try {
         await core.createNamespacedResourceQuota({ namespace, body })
     } catch (err) {
         if (isConflict(err)) {
-            await core.replaceNamespacedResourceQuota({ name: 'chaosclaw-quota', namespace, body }).catch(() => {})
+            await core.replaceNamespacedResourceQuota({ name: 'chaosify-quota', namespace, body }).catch(() => {})
         }
         throw err
     }
 }
 
 /**
- * Creates the chaosclaw namespace and applies RBAC scoping. Idempotent.
+ * Creates the chaosify namespace and applies RBAC scoping. Idempotent.
  * @param kc Loaded kubeconfig to use for all API calls.
  * @param options Options containing namespace and optional context.
  */
@@ -51,28 +51,28 @@ export async function initNamespace(kc: k8s.KubeConfig, options: ReconOptions): 
     const steps: Step[] = [
         nsStep,
         await runStep('ResourceQuota', () => applyQuota(core, ns)),
-        await runStep('ServiceAccount chaosclaw-runner', () =>
+        await runStep('ServiceAccount chaosify-runner', () =>
             core.createNamespacedServiceAccount({
                 namespace: ns,
-                body: { metadata: { name: 'chaosclaw-runner', namespace: ns } }
+                body: { metadata: { name: 'chaosify-runner', namespace: ns } }
             }).then(() => {})
         ),
-        await runStep('Role chaosclaw-runner', () =>
+        await runStep('Role chaosify-runner', () =>
             rbac.createNamespacedRole({
                 namespace: ns,
                 body: {
-                    metadata: { name: 'chaosclaw-runner', namespace: ns },
+                    metadata: { name: 'chaosify-runner', namespace: ns },
                     rules: [{ apiGroups: [''], resources: ['pods', 'pods/exec', 'pods/log'], verbs: ['get', 'list', 'create', 'delete'] }]
                 }
             }).then(() => {})
         ),
-        await runStep('RoleBinding chaosclaw-runner', () =>
+        await runStep('RoleBinding chaosify-runner', () =>
             rbac.createNamespacedRoleBinding({
                 namespace: ns,
                 body: {
-                    metadata: { name: 'chaosclaw-runner', namespace: ns },
-                    subjects: [{ kind: 'ServiceAccount', name: 'chaosclaw-runner', namespace: ns }],
-                    roleRef: { apiGroup: 'rbac.authorization.k8s.io', kind: 'Role', name: 'chaosclaw-runner' }
+                    metadata: { name: 'chaosify-runner', namespace: ns },
+                    subjects: [{ kind: 'ServiceAccount', name: 'chaosify-runner', namespace: ns }],
+                    roleRef: { apiGroup: 'rbac.authorization.k8s.io', kind: 'Role', name: 'chaosify-runner' }
                 }
             }).then(() => {})
         ),

@@ -1,4 +1,4 @@
-// Implements "chaosclaw scenarios list" — lists registered packs and their scenarios.
+﻿// Implements "chaosify scenarios list" — lists registered packs and their scenarios.
 import chalk from 'chalk'
 import type { Command } from 'commander'
 import { ScenarioRegistry, isRuntimeScenario } from '../../../core/scenarios/registry.js'
@@ -39,7 +39,7 @@ export function list(scenarios: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Scenarios')
+            header('Chaosify Scenarios')
 
             if (packs.length === 0) {
                 blank()

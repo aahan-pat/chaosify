@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { FalcoAlertSource } from '../../../../src/core/alert-sources/adapters/falco.js'
 
@@ -25,9 +25,9 @@ function falcoEvent(ns: string, podName: string, rule = 'Read sensitive file'): 
   })
 }
 
-const NS = 'chaosclaw-test'
-const PREFIX = 'chaosclaw-test-'
-const POD = 'chaosclaw-test-abc1'
+const NS = 'chaosify-test'
+const PREFIX = 'chaosify-test-'
+const POD = 'chaosify-test-abc1'
 
 // ---------------------------------------------------------------------------
 // Valid events
@@ -61,7 +61,7 @@ describe('FalcoAlertSource.parseLine — valid events', () => {
 
   it('matches a pod whose name starts with the prefix (not just exact match)', () => {
     // Any pod in the test run shares the prefix; only exact match would miss some.
-    const alert = source.parse(falcoEvent(NS, 'chaosclaw-test-xyz99'), NS, PREFIX)
+    const alert = source.parse(falcoEvent(NS, 'chaosify-test-xyz99'), NS, PREFIX)
     expect(alert).not.toBeNull()
   })
 })

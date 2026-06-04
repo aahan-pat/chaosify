@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import chalk from 'chalk'
 import { surveyWebhooks, type WebhookInfo } from '../../../core/recon/webhooks.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
@@ -34,7 +34,7 @@ export function webhooks(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Admission Webhooks')
+            header('Chaosify Recon — Admission Webhooks')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {

@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import chalk from 'chalk'
 import { surveyPolicies, type PolicyEngine, type PolicyInfo } from '../../../core/recon/policies.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
@@ -35,7 +35,7 @@ export function policies(recon: Command): void {
                 process.exit(0)
             }
 
-            header('ChaosClaw Recon — Policy Engine')
+            header('Chaosify Recon — Policy Engine')
             field('Cluster Context', clusterContext)
 
             if (result.status === 'skip' || result.status === 'error') {

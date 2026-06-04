@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Command } from 'commander'
 
 // ---------------------------------------------------------------------------
@@ -11,7 +11,7 @@ vi.mock('../../../../src/core/setup/cleanup.js', () => ({
 
 vi.mock('../../../../src/cli/commands/recon/utils/shared.js', () => ({
   buildKubeConfig: vi.fn().mockReturnValue({ kc: {}, clusterContext: 'test-cluster' }),
-  DEFAULT_RECON_NAMESPACE: 'chaosclaw',
+  DEFAULT_RECON_NAMESPACE: 'chaosify',
 }))
 
 import { cleanup } from '../../../../src/cli/commands/setup/cleanup.js'
@@ -26,13 +26,13 @@ const teardownMock = teardownNamespace as ReturnType<typeof vi.fn>
 function successResult() {
   return Promise.resolve({
     clusterContext: 'test-cluster',
-    namespace: 'chaosclaw',
+    namespace: 'chaosify',
     steps: [
-      { name: 'RoleBinding chaosclaw-runner', status: 'ok' },
-      { name: 'Role chaosclaw-runner', status: 'ok' },
-      { name: 'ServiceAccount chaosclaw-runner', status: 'ok' },
-      { name: 'ResourceQuota chaosclaw-quota', status: 'ok' },
-      { name: 'Namespace chaosclaw', status: 'ok' },
+      { name: 'RoleBinding chaosify-runner', status: 'ok' },
+      { name: 'Role chaosify-runner', status: 'ok' },
+      { name: 'ServiceAccount chaosify-runner', status: 'ok' },
+      { name: 'ResourceQuota chaosify-quota', status: 'ok' },
+      { name: 'Namespace chaosify', status: 'ok' },
     ],
   })
 }
@@ -40,9 +40,9 @@ function successResult() {
 function failedStepResult() {
   return Promise.resolve({
     clusterContext: 'test-cluster',
-    namespace: 'chaosclaw',
+    namespace: 'chaosify',
     steps: [
-      { name: 'RoleBinding chaosclaw-runner', status: 'failed', detail: 'permission denied' },
+      { name: 'RoleBinding chaosify-runner', status: 'failed', detail: 'permission denied' },
     ],
   })
 }
@@ -96,10 +96,10 @@ describe('setup cleanup — success', () => {
     expect(teardownMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'my-ns' }))
   })
 
-  it('uses the default namespace "chaosclaw" when --namespace is omitted', async () => {
+  it('uses the default namespace "chaosify" when --namespace is omitted', async () => {
     teardownMock.mockImplementation(successResult)
     await run(['node', 'setup', 'cleanup'])
-    expect(teardownMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosclaw' }))
+    expect(teardownMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ namespace: 'chaosify' }))
   })
 
   it('forwards --context to teardownNamespace', async () => {
@@ -168,10 +168,10 @@ describe('setup cleanup — already removed', () => {
   it('exits 0 when all resources were already deleted (already-existed steps)', async () => {
     teardownMock.mockResolvedValue({
       clusterContext: 'test-cluster',
-      namespace: 'chaosclaw',
+      namespace: 'chaosify',
       steps: [
-        { name: 'RoleBinding chaosclaw-runner', status: 'already-existed' },
-        { name: 'Namespace chaosclaw', status: 'already-existed' },
+        { name: 'RoleBinding chaosify-runner', status: 'already-existed' },
+        { name: 'Namespace chaosify', status: 'already-existed' },
       ],
     })
     await run(['node', 'setup', 'cleanup'])

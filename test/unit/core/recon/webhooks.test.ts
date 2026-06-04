@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { surveyWebhooks } from '../../../../src/core/recon/webhooks.js'
 
@@ -48,7 +48,7 @@ function mutatingConfig(webhooks: Partial<k8s.V1MutatingWebhook>[]): k8s.V1Mutat
   }
 }
 
-const OPTS = { namespace: 'chaosclaw' }
+const OPTS = { namespace: 'chaosify' }
 
 // ---------------------------------------------------------------------------
 // no webhooks

@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+﻿import type { Command } from 'commander'
 import chalk from 'chalk'
 import { surveyTopology, GRAPHNETES_REPO } from '../../../core/recon/topology.js'
 import { header, field, section, indent, blank } from '../../output.js'
@@ -44,7 +44,7 @@ export function topology(recon: Command): void {
                 indent(`Install it from: ${chalk.cyan(GRAPHNETES_REPO)}`)
                 blank()
                 indent('Once installed, re-run:')
-                indent(`chaosclaw recon topology${opts.context ? ` --context ${opts.context}` : ''}`, 4)
+                indent(`chaosify recon topology${opts.context ? ` --context ${opts.context}` : ''}`, 4)
                 blank()
                 process.exit(0)
             }
@@ -55,7 +55,7 @@ export function topology(recon: Command): void {
                 process.exit(2)
             }
 
-            header('ChaosClaw Recon — Cluster Topology')
+            header('Chaosify Recon — Cluster Topology')
             if (opts.context) field('Cluster Context', opts.context)
             field('Namespace', opts.namespace)
             if (opts.graph) field('Graph Source', opts.graph)

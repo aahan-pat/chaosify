@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { injectNamespace, resolveFirstContainer } from '../../../../src/core/scenarios/exec/pod-runner.js'
 
 // ---------------------------------------------------------------------------
@@ -7,33 +7,33 @@ import { injectNamespace, resolveFirstContainer } from '../../../../src/core/sce
 
 describe('injectNamespace', () => {
   it('sets namespace on the metadata', () => {
-    const result = injectNamespace({ kind: 'Pod', metadata: { name: 'test' } }, 'chaosclaw-test')
+    const result = injectNamespace({ kind: 'Pod', metadata: { name: 'test' } }, 'chaosify-test')
     const meta = result['metadata'] as Record<string, unknown>
-    expect(meta['namespace']).toBe('chaosclaw-test')
+    expect(meta['namespace']).toBe('chaosify-test')
   })
 
-  it('sets generateName to chaosclaw-test-', () => {
-    const result = injectNamespace({ kind: 'Pod', metadata: {} }, 'chaosclaw-test')
+  it('sets generateName to chaosify-test-', () => {
+    const result = injectNamespace({ kind: 'Pod', metadata: {} }, 'chaosify-test')
     const meta = result['metadata'] as Record<string, unknown>
-    expect(meta['generateName']).toBe('chaosclaw-test-')
+    expect(meta['generateName']).toBe('chaosify-test-')
   })
 
   it('clears the name so generateName takes control of naming', () => {
-    const result = injectNamespace({ kind: 'Pod', metadata: { name: 'my-pod' } }, 'chaosclaw-test')
+    const result = injectNamespace({ kind: 'Pod', metadata: { name: 'my-pod' } }, 'chaosify-test')
     const meta = result['metadata'] as Record<string, unknown>
     expect(meta['name']).toBeUndefined()
   })
 
   it('creates a metadata object when the manifest has none', () => {
-    const result = injectNamespace({ kind: 'Pod', apiVersion: 'v1' }, 'chaosclaw-test')
+    const result = injectNamespace({ kind: 'Pod', apiVersion: 'v1' }, 'chaosify-test')
     const meta = result['metadata'] as Record<string, unknown>
-    expect(meta['namespace']).toBe('chaosclaw-test')
+    expect(meta['namespace']).toBe('chaosify-test')
   })
 
   it('preserves other metadata fields alongside the injected ones', () => {
     const result = injectNamespace(
       { kind: 'Pod', metadata: { labels: { app: 'test' }, annotations: { 'note': 'yes' } } },
-      'chaosclaw-test',
+      'chaosify-test',
     )
     const meta = result['metadata'] as Record<string, unknown>
     expect(meta['labels']).toEqual({ app: 'test' })
@@ -49,7 +49,7 @@ describe('injectNamespace', () => {
 
   it('does not mutate the original manifest', () => {
     const original = { kind: 'Pod', metadata: { name: 'test' } }
-    injectNamespace(original, 'chaosclaw-test')
+    injectNamespace(original, 'chaosify-test')
     // Original must remain unchanged.
     expect((original.metadata as Record<string, unknown>)['namespace']).toBeUndefined()
   })

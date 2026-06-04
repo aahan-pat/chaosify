@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+﻿import { Command } from 'commander'
 import { init } from './commands/setup/init.js'
 import { cleanup } from './commands/setup/cleanup.js'
 import { list } from './commands/scenarios/list.js'
@@ -36,7 +36,7 @@ export class Registry {
     static build(): Command {
         const program = new Command()
         program
-            .name('chaosclaw')
+            .name('chaosify')
             .description('Deterministic CLI for Kubernetes Continuous Control Verification')
             .version('0.1.0')
 
@@ -44,13 +44,13 @@ export class Registry {
 
         program
             .command('version')
-            .description('Print the chaosclaw version')
-            .action(() => console.log(`chaosclaw v${program.version()}`))
+            .description('Print the chaosify version')
+            .action(() => console.log(`chaosify v${program.version()}`))
 
         // Register setup commands.
         const setup = program
             .command('setup')
-            .description('Initialize and tear down the chaosclaw test environment')
+            .description('Initialize and tear down the chaosify test environment')
 
         registry.register(setup, init)
         registry.register(setup, cleanup)

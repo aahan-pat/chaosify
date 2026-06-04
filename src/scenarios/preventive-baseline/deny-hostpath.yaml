@@ -1,4 +1,4 @@
-id: deny-hostpath
+﻿id: deny-hostpath
 version: 1
 name: hostPath mount denied
 description: Attempts to create a pod that mounts a hostPath volume. The cluster should reject it.
@@ -13,7 +13,7 @@ manifest:
   apiVersion: v1
   kind: Pod
   metadata:
-    name: chaosclaw-hostpath-test
+    name: chaosify-hostpath-test
   spec:
     containers:
       - name: test

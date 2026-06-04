@@ -20,4 +20,11 @@ CLAUDE.md
 probe/
 
 # Output files
-graphnetes-out
+graphnetes-out/
+recon-*.json
+exec-*.json
+detect-*.json
+network-*.json
+identity-*.json
+topology-*.json
+chaosify-*.json

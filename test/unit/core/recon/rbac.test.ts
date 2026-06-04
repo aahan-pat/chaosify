@@ -72,7 +72,7 @@ const OPTS = { namespace: 'chaosify' }
 // ---------------------------------------------------------------------------
 
 describe('surveyRbac — cluster-admin bindings', () => {
-  it('emits a WARN finding for a non-system cluster-admin binding', async () => {
+  it('emits a HIGH finding for a User bound to cluster-admin', async () => {
     const kc = makeKc(
       vi.fn().mockResolvedValue({ items: [] }),
       vi.fn().mockResolvedValue({
@@ -80,10 +80,10 @@ describe('surveyRbac — cluster-admin bindings', () => {
       }),
     )
     const result = await surveyRbac(kc, OPTS)
-    const warn = result.findings.filter(f => f.severity === 'WARN')
-    expect(warn).toHaveLength(1)
-    expect(warn[0]?.title).toMatch(/cluster-admin/i)
-    expect(warn[0]?.detail).toContain('developer@example.com')
+    const high = result.findings.filter(f => f.severity === 'HIGH')
+    expect(high).toHaveLength(1)
+    expect(high[0]?.title).toMatch(/cluster-admin/i)
+    expect(high[0]?.detail).toContain('developer@example.com')
   })
 
   it('omits system-namespace subjects when includeSystem is false', async () => {
@@ -120,7 +120,7 @@ describe('surveyRbac — cluster-admin bindings', () => {
     expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(0)
   })
 
-  it('emits one WARN per binding, not per subject', async () => {
+  it('emits one HIGH per binding, not per subject', async () => {
     const kc = makeKc(
       vi.fn().mockResolvedValue({ items: [] }),
       vi.fn().mockResolvedValue({
@@ -134,7 +134,7 @@ describe('surveyRbac — cluster-admin bindings', () => {
     )
     const result = await surveyRbac(kc, OPTS)
     // Both subjects appear in a single finding's detail, not as two separate findings.
-    expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(1)
+    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(1)
     expect(result.findings[0]?.detail).toContain('alice@example.com')
     expect(result.findings[0]?.detail).toContain('bob@example.com')
   })
@@ -264,7 +264,7 @@ describe('surveyRbac — 403 handling', () => {
   })
 
   it('returns ok when bindings produce analysis findings even if roles return 403', async () => {
-    // A cluster-admin binding from a non-system user still produces a WARN finding.
+    // A cluster-admin binding from a non-system User still produces a HIGH finding.
     const kc = makeKc(
       vi.fn().mockRejectedValue(forbiddenErr()),
       vi.fn().mockResolvedValue({
@@ -273,7 +273,7 @@ describe('surveyRbac — 403 handling', () => {
     )
     const result = await surveyRbac(kc, OPTS)
     expect(result.status).toBe('ok')
-    expect(result.findings.some(f => f.severity === 'WARN')).toBe(true)
+    expect(result.findings.some(f => f.severity === 'HIGH')).toBe(true)
     // A SKIP finding for roles is still included alongside the analysis findings.
     expect(result.findings.some(f => f.severity === 'SKIP')).toBe(true)
   })

@@ -278,9 +278,10 @@ function interpretProbeResult(
             return { reachable: true, httpStatus }
         }
         // Distinguish common curl exit codes to give more actionable error information.
-        const errorType = exitCode === 6 ? 'dns_failure'
-            : exitCode === 7 ? 'refused'
-            : exitCode === 28 ? 'timeout'
+        const errorType = exitCode === 6   ? 'dns_failure'
+            : exitCode === 7   ? 'refused'
+            : exitCode === 28  ? 'timeout'
+            : exitCode === 127 ? 'probe_tool_missing'
             : 'unknown'
         return { reachable: false, errorType }
     }

@@ -18,11 +18,18 @@ function analyze(
             .filter(s => includeSystem || !SYSTEM_NAMESPACES.has(s.namespace ?? ''))
             .map(s => `${s.kind}: ${s.name}${s.namespace ? ` (${s.namespace})` : ''}`)
             .join(', ')
-        if (subjects) findings.push({
-            severity: 'WARN',
-            title: 'cluster-admin bound to non-system principal(s)',
-            detail: `${subjects} — via ClusterRoleBinding "${binding.metadata?.name}"`,
-        })
+        // Groups and Users get HIGH — any member gains unrestricted cluster access.
+        // ServiceAccounts stay WARN — scoped to a single workload identity.
+        if (subjects) {
+            const hasGroupOrUser = (binding.subjects ?? [])
+                .filter(s => includeSystem || !SYSTEM_NAMESPACES.has(s.namespace ?? ''))
+                .some(s => s.kind === 'Group' || s.kind === 'User')
+            findings.push({
+                severity: hasGroupOrUser ? 'HIGH' : 'WARN',
+                title: 'cluster-admin bound to non-system principal(s)',
+                detail: `${subjects} — via ClusterRoleBinding "${binding.metadata?.name}"`,
+            })
+        }
     }
 
     // Build a role lookup so binding resolution doesn't require a linear scan per binding.

@@ -1,5 +1,5 @@
 ﻿# Chaosify Architecture
-## Single-Cluster MVP and Multi-Cluster Evolution with OpenClaw
+## Single-Cluster MVP and Multi-Cluster Evolution
 
 **Version:** 0.1  
 **Status:** Working architecture baseline  
@@ -25,7 +25,7 @@ That means the first version should:
 - write **structured evidence** to JSON
 - work **without** any control plane or agent runtime
 
-OpenClaw comes in as the **optional orchestration and intelligence layer**, not the verification engine.
+An agentic AI serves as the **optional orchestration and intelligence layer**, not the verification engine.
 
 Its role is to:
 
@@ -38,7 +38,7 @@ Its role is to:
 
 **Key design rule:**
 
-> **Chaosify owns correctness and safety. OpenClaw owns what gets tested and what the results mean.**
+> **Chaosify owns correctness and safety. The agentic AI layer owns what gets tested and what the results mean.**
 
 ---
 
@@ -86,11 +86,11 @@ All execution must be:
 ### 3.4 Built-in scenario packs are optional
 Chaosify ships optional pre-built scenario packs for common preventive controls. These are convenience — not the primary interface. The primary execution path is `--manifest`, which accepts any manifest from any caller. Scenario packs are declarative and versioned, but their presence is not required for Chaosify to be useful.
 
-### 3.5 OpenClaw extends workflows; it does not redefine results
-OpenClaw may invoke Chaosify, summarize outcomes, and recommend next steps, but it should not own pass/fail semantics.
+### 3.5 Agentic AI extends workflows; it does not redefine results
+An agentic AI may invoke Chaosify, summarize outcomes, and recommend next steps, but it should not own pass/fail semantics.
 
 ### 3.6 Namespace RBAC is the primary safety boundary
-Chaosify's safety guarantee is not about restricting what manifests can be submitted — it is about ensuring that whatever gets submitted cannot escape the test namespace. The CLI's service account is RBAC-bound to the test namespace only. This means OpenClaw can generate and submit arbitrary manifests for free-form pentesting, and the safety guarantee holds regardless. The blast radius is enforced structurally, not by convention.
+Chaosify's safety guarantee is not about restricting what manifests can be submitted — it is about ensuring that whatever gets submitted cannot escape the test namespace. The CLI's service account is RBAC-bound to the test namespace only. This means an agentic AI can generate and submit arbitrary manifests for free-form pentesting, and the safety guarantee holds regardless. The blast radius is enforced structurally, not by convention.
 
 ### 3.7 Evidence must remain stable as the system scales
 The JSON evidence schema created by the single-cluster CLI should remain the same foundation for later multi-cluster aggregation.
@@ -103,7 +103,7 @@ The JSON evidence schema created by the single-cluster CLI should remain the sam
 
 ```mermaid
 flowchart TD
-    OC["**OpenClaw** *(optional post-MVP)*\nSkills · Fleet Workflows · Explanation · Remediation · Re-test"]
+    OC["**Agentic AI** *(optional post-MVP)*\nSkills · Fleet Workflows · Explanation · Remediation · Re-test"]
     A["**Chaosify Product Layer**\nCLI UX · Report Formatting · Packaging · Scenario Packs"]
     B["**Chaosify Verification Core**\nScenario Registry · Preflight Checks · Executor\nValidation Engine · Evidence Builder · Cleanup Manager\nRuntime Executor · Alert Sources · Runtime Validator"]
     C["**Recon Layer** *(read-only)*\nWebhooks · Policies · PSA · RBAC · Nodes · NetworkPolicies\nRuntimeAgents · Topology · ReconReport"]
@@ -119,7 +119,7 @@ flowchart TD
 
 * **Chaosify CLI core** is the product you ship first.
 * **Chaosify verification core** is the source of truth for execution and validation.
-* **OpenClaw** is added later as the orchestration plane for multi-cluster and workflow automation.
+* **Agentic AI** is added later as the orchestration plane for multi-cluster and workflow automation.
 
 ---
 
@@ -342,13 +342,13 @@ Every run should record:
 
 ---
 
-## 7. OpenClaw Agent Layer
+## 7. Agentic AI Layer
 
-OpenClaw is **optional** in MVP and becomes important when the product expands to multi-cluster workflows.
+An agentic AI is **optional** in MVP and becomes important when the product expands to multi-cluster workflows.
 
-## 7.1 Role of OpenClaw
+## 7.1 Role of the Agentic AI Layer
 
-OpenClaw should provide:
+The agentic AI layer should provide:
 
 * deciding what to test — including generating manifests dynamically for free-form pentesting
 * orchestration and skill-based invocation
@@ -368,21 +368,21 @@ It should **not** provide:
 
 ## 7.2 Entity ownership
 
-| Entity            | Owned by   | Purpose                                                |
-| ----------------- | ---------- | ------------------------------------------------------ |
-| Scenario          | Chaosify  | Optional pre-built test                                |
-| Scenario Pack     | Chaosify  | Optional group of pre-built tests                      |
-| Manifest          | OpenClaw   | Dynamically generated test input                       |
-| Execution sandbox | Chaosify  | Safe, RBAC-scoped execution and outcome recording      |
-| Skill             | OpenClaw   | Invokes Chaosify and adds workflow and analysis layer |
+| Entity            | Owned by      | Purpose                                                |
+| ----------------- | ------------- | ------------------------------------------------------ |
+| Scenario          | Chaosify      | Optional pre-built test                                |
+| Scenario Pack     | Chaosify      | Optional group of pre-built tests                      |
+| Manifest          | Agentic AI    | Dynamically generated test input                       |
+| Execution sandbox | Chaosify      | Safe, RBAC-scoped execution and outcome recording      |
+| Skill             | Agentic AI    | Invokes Chaosify and adds workflow and analysis layer  |
 
 ---
 
-## 8. Multi-Cluster Architecture Using OpenClaw
+## 8. Multi-Cluster Architecture with Agentic AI
 
 ## 8.1 Design rule
 
-> **Chaosify remains single-cluster per execution. OpenClaw scales it horizontally across many clusters.**
+> **Chaosify remains single-cluster per execution. An agentic AI scales it horizontally across many clusters.**
 
 This keeps the verification engine simple and reusable.
 
@@ -392,7 +392,7 @@ This keeps the verification engine simple and reusable.
 
 ```text
 +---------------------------------------------------------------+
-|                    OpenClaw Orchestrator                      |
+|                   Agentic AI Orchestrator                     |
 |---------------------------------------------------------------|
 | Fleet skill router | inventory | scheduling | summarization   |
 +---------------------+--------------------+--------------------+
@@ -413,7 +413,7 @@ This keeps the verification engine simple and reusable.
 
 ## 8.3 Orchestration recommendation
 
-Start with a **single orchestrator agent** — one OpenClaw skill loops through the full target inventory. This is the simplest implementation and appropriate for small design-partner fleets.
+Start with a **single orchestrator agent** — one agentic AI skill loops through the full target inventory. This is the simplest implementation and appropriate for small design-partner fleets.
 
 Migrate to **one agent per cluster or environment group** as isolation requirements and scale increase.
 
@@ -422,13 +422,13 @@ Migrate to **one agent per cluster or environment group** as isolation requireme
 ## 8.4 Fleet workflow
 
 ```text
-1. User asks OpenClaw to verify a fleet.
-2. OpenClaw resolves the target list.
-3. OpenClaw selects the scenario pack and concurrency policy.
-4. For each cluster, OpenClaw invokes Chaosify CLI with the correct context.
+1. User asks the agentic AI to verify a fleet.
+2. The agent resolves the target list.
+3. The agent selects the scenario pack and concurrency policy.
+4. For each cluster, the agent invokes Chaosify CLI with the correct context.
 5. Each run produces an independent JSON artifact.
-6. OpenClaw aggregates results.
-7. OpenClaw highlights failed controls and patterns.
+6. The agent aggregates results.
+7. The agent highlights failed controls and patterns.
 8. Optional remediation and re-test workflows begin.
 ```
 
@@ -458,7 +458,7 @@ clusters:
 
 ## 8.6 Aggregation model
 
-OpenClaw should aggregate Chaosify outputs, not replace them.
+The agentic AI layer should aggregate Chaosify outputs, not replace them.
 
 ### Per-cluster output remains:
 
@@ -492,7 +492,7 @@ This keeps aggregation downstream from the same core evidence model.
 * JSON evidence schema
 * single-cluster safety guarantees
 
-## 9.2 Owned by OpenClaw
+## 9.2 Owned by the Agentic AI Layer
 
 * deciding what to test (scenario selection or dynamic manifest generation)
 * skill execution
@@ -539,7 +539,7 @@ Even if MVP is CLI-only, design the interface as if it will become a stable prog
 * `3` = preflight failure
 * `4` = invalid CLI usage
 
-This makes OpenClaw orchestration straightforward later.
+This makes agentic AI orchestration straightforward later.
 
 ---
 
@@ -577,7 +577,7 @@ Exit criteria:
 
 * design partners can use the CLI without engineering hand-holding
 
-## Phase 3 — OpenClaw multi-cluster orchestration
+## Phase 3 — Agentic AI multi-cluster orchestration
 
 Deliver:
 
@@ -592,7 +592,7 @@ Deliver:
 Exit criteria:
 
 * Multiple clusters can be verified using the same single-cluster core
-* OpenClaw can invoke Chaosify via MCP without subprocess orchestration
+* An agentic AI can invoke Chaosify via MCP without subprocess orchestration
 
 ## Phase 4 — Closed-loop workflows
 
@@ -615,23 +615,23 @@ Exit criteria:
 
 ### Rationale
 
-Chaosify and OpenClaw are sibling products. OpenClaw is a TypeScript-first monorepo. This alignment provides:
+TypeScript provides strong integration with agentic AI tooling:
 
-* **Shared JSON schema types** — The evidence schema can be a shared TypeScript package. No translation layer, no schema drift between the two products.
-* **Skill integration** — OpenClaw skills are TypeScript. Chaosify can be imported directly by skills as a library, not only invoked as a subprocess.
-* **Tooling alignment** — Same compiler (`tsc`/`tsdown`), test runner (`vitest`), linter (`oxlint`), and package manager (`pnpm`) as OpenClaw. Reduces toolchain fragmentation across the two products.
+* **Shared JSON schema types** — The evidence schema can be a shared TypeScript package consumed by any agentic AI skill with no translation layer.
+* **Skill integration** — Agentic AI skills written in TypeScript can import Chaosify directly as a library, not only invoke it as a subprocess.
+* **Tooling** — `tsc`/`tsdown`, `vitest`, and `oxlint` give a well-understood, low-friction build pipeline.
 * **Kubernetes client** — `@kubernetes/client-node` is the official Kubernetes JavaScript/TypeScript client, maintained by the Kubernetes sig-api-machinery team.
 
 ### Distribution
 
-Chaosify is bundled to a single distributable using `tsdown`, aligned with OpenClaw's build pipeline. A Docker image is provided for environments without a Node.js runtime.
+Chaosify is bundled to a single distributable using `tsdown`. A Docker image is provided for environments without a Node.js runtime.
 
 ### Tooling stack
 
 | Tool                        | Purpose                       |
 | --------------------------- | ----------------------------- |
 | TypeScript                  | Language                      |
-| Node.js ≥ 22.16.0           | Runtime (aligned with OpenClaw)|
+| Node.js ≥ 22.16.0           | Runtime                        |
 | `commander`                 | CLI argument parsing          |
 | `chalk`                     | Terminal color output         |
 | `@kubernetes/client-node`   | Kubernetes API client         |

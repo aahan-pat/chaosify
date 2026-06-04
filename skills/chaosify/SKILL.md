@@ -1,12 +1,14 @@
 ﻿---
 name: chaosify
 description: Verify Kubernetes preventive controls using the Chaosify CLI — preflight checks, scenario pack runs, evidence parsing, and failure summarization for single-cluster or fleet-wide workflows.
-metadata: {"openclaw": {"emoji": "⚔️", "requires": {"bins": ["chaosify", "kubectl"]}, "install": [{"id": "brew", "kind": "brew", "formula": "chaosify", "bins": ["chaosify"], "label": "Install Chaosify (brew)"}]}}
+metadata:
+  requires:
+    bins: ["chaosify", "kubectl"]
 ---
 
 TRIGGER when: the user asks to verify Kubernetes controls, guardrails, admission policies, or Kyverno policies; asks to run Chaosify or a Chaosify scenario pack; asks to check whether a cluster's preventive controls are working; asks to investigate a failed control; or uses terms like "control verification", "preventive baseline", or "deny-*" scenario names.
 
-SKIP: full cluster pentesting or security assessments — use the `openclaw-pentest` skill instead. Skip general Kubernetes debugging unrelated to admission controls or preventive policies; questions about Chaosify internals or source code.
+SKIP: full cluster pentesting or security assessments — use the `agentic-pentest` skill instead. Skip general Kubernetes debugging unrelated to admission controls or preventive policies; questions about Chaosify internals or source code.
 
 ---
 

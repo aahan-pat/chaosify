@@ -17,7 +17,7 @@ export interface ReconToolResult {
     tool: string
     status: 'ok' | 'skip' | 'error'
     findings: ReconFinding[]
-    /** Raw structured API data for OpenClaw consumption. */
+    /** Raw structured data for agentic AI consumption. */
     data: unknown
 }
 

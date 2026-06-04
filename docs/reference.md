@@ -1,6 +1,6 @@
 ﻿# Chaosify Reference
 
-Complete command reference, flags, exit codes, and OpenClaw skill setup.
+Complete command reference, flags, exit codes, and agentic AI skill setup.
 
 ---
 
@@ -45,14 +45,14 @@ chaosify probe run --scenario deny-privileged-container
 chaosify probe run --pack preventive-baseline --context prod-us-east
 chaosify probe run --pack preventive-baseline --output result.json
 
-# Arbitrary manifest (primary interface for OpenClaw)
+# Arbitrary manifest
 chaosify probe run --manifest ./my-pod.yaml --expect rejected
 chaosify probe run --manifest ./my-deployment.yaml --expect allowed
 ```
 
 ### Verification — execution primitives
 
-Four composable primitives for OpenClaw-driven free-form pentesting. OpenClaw generates all manifests and commands dynamically from recon findings.
+Four composable primitives for AI-driven free-form pentesting. An agentic AI generates manifests and commands dynamically from recon findings.
 
 ```bash
 # exec — create a pod, run a command inside it, capture exit code + stdout + stderr
@@ -156,35 +156,20 @@ chaosify help
 
 ---
 
-## OpenClaw skills
+## Agentic AI skills
 
-Chaosify ships two OpenClaw skills in `skills/`:
+Chaosify ships two agentic AI skills in `skills/`:
 
 | Skill | Trigger | Description |
 |---|---|---|
 | `chaosify` | "Verify controls on this cluster" | Targeted control verification — recon init, preflight, scenario pack runs, result parsing, failure summarization, fleet fan-out |
-| `openclaw-pentest` | "Pentest this cluster" | Autonomous security assessment — OpenClaw runs recon first, then uses execution primitives to probe the attack surface; produces a prioritized Critical/High/Gap report |
+| `agentic-pentest` | "Pentest this cluster" | Autonomous security assessment — the agent runs recon first, then uses execution primitives to probe the attack surface; produces a prioritized Critical/High/Gap report |
 
-Use `chaosify` when you know what controls to run. Use `openclaw-pentest` when you want OpenClaw to assess the cluster's security posture autonomously without being constrained to pre-defined scenarios.
+Use `chaosify` when you know what controls to run. Use `agentic-pentest` when you want an AI agent to assess the cluster's security posture autonomously without being constrained to pre-defined scenarios.
 
-### Register with OpenClaw
+### Register with your agentic AI
 
-Add the skills directory to `~/.openclaw/openclaw.json`:
-
-```json
-{
-  "skills": {
-    "load": {
-      "extraDirs": ["/path/to/chaosify/skills"],
-      "watch": true
-    },
-    "entries": {
-      "chaosify": { "enabled": true },
-      "openclaw-pentest": { "enabled": true }
-    }
-  }
-}
-```
+Point your agent's skill loader at the `skills/` directory. The exact config format depends on your agent framework — add `skills/chaosify/` and `skills/agentic-pentest/` to its skill search path.
 
 ### Skill structure
 
@@ -195,7 +180,7 @@ skills/
     references/
       goal-elaboration.md     ← result vocabulary, summarization, fleet aggregation
       cli-reference.md        ← commands, JSON schema, exit codes, remediation
-  openclaw-pentest/
+  agentic-pentest/
     SKILL.md                  ← pentest workflow and authorization gate
     references/
       goal-elaboration.md     ← scope, cross-pack correlation, severity, report structure

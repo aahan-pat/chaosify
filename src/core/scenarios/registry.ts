@@ -117,7 +117,7 @@ export class ScenarioRegistry {
 
     /**
      * Builds and returns a registry loaded from all pack directories under scenariosDir.
-     * Discovers pack directories automatically — each subdirectory must contain a pack.yaml.
+     * Discovers pack directories automatically — every subdirectory is treated as a pack.
      * @param scenariosDir Absolute path to the scenarios root directory.
      */
     static async build(scenariosDir: string): Promise<ScenarioRegistry> {

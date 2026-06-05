@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import type { ScenarioResult, RunEvidence, RunSummary } from '../../types/evidence.js'
 
-const VERSION = '0.1.0'
+const VERSION = '0.1.1'
 
 /** Metadata provided once at the start of a run (before any scenarios execute) */
 export interface EvidenceBuilderOptions {
@@ -40,7 +40,7 @@ export class EvidenceBuilder {
             runId: this.runId,
             toolVersion: VERSION,
             clusterContext: this.options.clusterContext,
-            initiatedBy: process.env['USER'] ?? 'unknown',
+            initiatedBy: process.env['USER'] ?? process.env['USERNAME'] ?? 'unknown',
             packId: this.options.packId,
             // packVersion is stored as a string even when provided as a number.
             packVersion: this.options.packVersion !== undefined ? String(this.options.packVersion) : undefined,

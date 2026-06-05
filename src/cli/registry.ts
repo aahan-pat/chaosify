@@ -38,7 +38,7 @@ export class Registry {
         program
             .name('chaosify')
             .description('Deterministic CLI for Kubernetes Continuous Control Verification')
-            .version('0.1.0')
+            .version('0.1.1')
 
         const registry = new Registry()
 

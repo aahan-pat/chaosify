@@ -111,13 +111,9 @@ chaosify help
 | Flag | Description |
 |---|---|
 | `--context <name>` | Kubernetes context to use |
-| `--kubeconfig <path>` | kubeconfig path override |
 | `--namespace <name>` | Test namespace override (default: `chaosify`) |
 | `--output <path>` | Write JSON evidence artifact to file |
 | `--format <table\|json>` | Output mode |
-| `--verbose` | Include extra diagnostic detail |
-| `--quiet` | Minimal terminal output |
-| `--no-color` | Disable colorized output |
 | `--pack <id>` | Scenario pack to run |
 | `--scenario <id>` | Single scenario to run |
 | `--manifest <path>` | Manifest to submit (`probe run`) |
@@ -170,6 +166,8 @@ Use `chaosify` when you know what controls to run. Use `agentic-pentest` when yo
 ### Register with your agentic AI
 
 Point your agent's skill loader at the `skills/` directory. The exact config format depends on your agent framework — add `skills/chaosify/` and `skills/agentic-pentest/` to its skill search path.
+
+> **Claude Code users:** use `skills/claude/SKILL.md` instead. It is a single merged file that covers both skills and is pre-formatted for Claude Code's skill loader.
 
 ### Skill structure
 

@@ -14,7 +14,7 @@ SKIP: full cluster pentesting or security assessments — use the `agentic-pente
 
 # Chaosify Skill — Kubernetes Control Verification
 
-**What is Chaosify?** Chaosify is a local CLI binary (`chaosify`) installed on the machine running this agent. It is not a ClawHub skill or cloud service. Before starting any workflow, verify it is available:
+**What is Chaosify?** Chaosify is a local CLI binary (`chaosify`) installed on the machine running this agent. It is not a hosted skill or cloud service. Before starting any workflow, verify it is available:
 
 ```bash
 chaosify version

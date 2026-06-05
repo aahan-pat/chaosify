@@ -2,7 +2,7 @@
 import chalk from 'chalk'
 import { surveyTopology, GRAPHNETES_REPO } from '../../../core/recon/topology.js'
 import { header, field, section, indent, blank } from '../../output.js'
-import { DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
 
 /**
  * Attaches the "topology" subcommand to the recon command group.
@@ -55,8 +55,10 @@ export function topology(recon: Command): void {
                 process.exit(2)
             }
 
+            const { clusterContext } = buildKubeConfig(opts.context)
+
             header('Chaosify Recon — Cluster Topology')
-            if (opts.context) field('Cluster Context', opts.context)
+            field('Cluster Context', clusterContext)
             field('Namespace', opts.namespace)
             if (opts.graph) field('Graph Source', opts.graph)
 

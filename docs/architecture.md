@@ -234,7 +234,7 @@ Creates:
 * per-scenario detail
 * JSON evidence artifact
 
-For the evidence JSON schema, see [execution-layer-design.md](execution-layer-design.md).
+For the evidence JSON schema, see the [JSON Artifact Schema](reference.md#json-artifact-schema) section in reference.md.
 
 ### G. Cleanup manager
 

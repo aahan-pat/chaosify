@@ -1,8 +1,6 @@
 ﻿import { writeFile } from 'node:fs/promises'
 import * as k8s from '@kubernetes/client-node'
 
-export const DEFAULT_RECON_NAMESPACE = 'chaosify'
-
 /**
  * Loads kubeconfig, optionally switches context, and returns both the config and active context name.
  * @param context Kubernetes context to activate, uses current if omitted.

@@ -1,5 +1,6 @@
 ﻿import * as k8s from '@kubernetes/client-node'
 import { isConflict } from './errors.js'
+import { RESOURCE_QUOTA_NAME } from '../../constants.js'
 
 /**
  * Creates the namespace if it does not exist, returns false if it already did.
@@ -24,7 +25,7 @@ export async function ensureNamespace(api: k8s.CoreV1Api, name: string): Promise
  */
 export async function applyResourceQuota(api: k8s.CoreV1Api, namespace: string): Promise<void> {
     const quota: k8s.V1ResourceQuota = {
-        metadata: { name: 'chaosify-quota', namespace },
+        metadata: { name: RESOURCE_QUOTA_NAME, namespace },
         spec: {
             hard: {
                 pods: '10',

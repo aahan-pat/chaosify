@@ -2,7 +2,8 @@
 import type { Command } from 'commander'
 import { teardownNamespace, type TeardownResult } from '../../../core/setup/cleanup.js'
 import { header, field, section, indent, blank, badge } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from '../recon/utils/shared.js'
+import { buildKubeConfig } from '../recon/utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "cleanup" subcommand to the setup command group.

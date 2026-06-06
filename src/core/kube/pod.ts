@@ -1,5 +1,6 @@
 import * as k8s from '@kubernetes/client-node'
 import { Writable } from 'stream'
+import { DEFAULT_ADMISSION_TIMEOUT_MS } from '../../constants.js'
 
 export interface ExecResult {
     stdout: string
@@ -24,7 +25,7 @@ export async function submitPod(api: k8s.CoreV1Api, namespace: string, manifest:
  * @param name Pod name to watch.
  * @param timeoutMs Maximum wait time in milliseconds.
  */
-export async function waitForReady(api: k8s.CoreV1Api, namespace: string, name: string, timeoutMs = 30_000): Promise<void> {
+export async function waitForReady(api: k8s.CoreV1Api, namespace: string, name: string, timeoutMs = DEFAULT_ADMISSION_TIMEOUT_MS): Promise<void> {
     const deadline = Date.now() + timeoutMs
     while (Date.now() < deadline) {
         const pod = await api.readNamespacedPodStatus({ name, namespace })

@@ -2,7 +2,8 @@
 import chalk from 'chalk'
 import { surveyTopology, GRAPHNETES_REPO } from '../../../core/recon/topology.js'
 import { header, field, section, indent, blank } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "topology" subcommand to the recon command group.

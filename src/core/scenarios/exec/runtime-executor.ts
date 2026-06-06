@@ -44,8 +44,7 @@ export interface RuntimeExecutorOptions {
     timeoutMs?: number
 }
 
-const DEFAULT_OBSERVATION_WINDOW_MS = 10_000
-const DEFAULT_TIMEOUT_MS = 60_000
+import { DEFAULT_OBSERVATION_WINDOW_MS, DEFAULT_RUNTIME_TIMEOUT_MS, POD_GENERATE_NAME, DEFAULT_EXEC_STEP_TIMEOUT_MS } from '../../../constants.js'
 
 /**
  * Executes runtime detection scenarios against a live Kubernetes cluster.
@@ -72,7 +71,7 @@ export class RuntimeScenarioExecutor {
     ): Promise<RuntimeExecutionResult> {
         const startedAt = new Date().toISOString()
         const observationWindowMs = options.observationWindowMs ?? DEFAULT_OBSERVATION_WINDOW_MS
-        const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+        const timeoutMs = options.timeoutMs ?? DEFAULT_RUNTIME_TIMEOUT_MS
         const manifest = injectNamespace(scenario.manifest, options.namespace)
         const manifestSnapshot = JSON.stringify(manifest)
 
@@ -128,7 +127,7 @@ export class RuntimeScenarioExecutor {
         let alert: RuntimeAlert | null = null
         let observeError: string | undefined
         try {
-            alert = await this.alertSource.pollForAlert(namespace, 'chaosify-test-', windowStart, observationWindowMs)
+            alert = await this.alertSource.pollForAlert(namespace, POD_GENERATE_NAME, windowStart, observationWindowMs)
         } catch (err: unknown) {
             observeError = this.formatError(err)
         }
@@ -176,7 +175,7 @@ export class RuntimeScenarioExecutor {
         step: RuntimeScenarioExecStep,
     ): Promise<void> {
         const exec = this.createExec()
-        const timeoutMs = step.timeoutMs ?? 10_000
+        const timeoutMs = step.timeoutMs ?? DEFAULT_EXEC_STEP_TIMEOUT_MS
 
         await new Promise<void>((resolve, reject) => {
             const timer = setTimeout(() => reject(new Error('exec timeout')), timeoutMs)

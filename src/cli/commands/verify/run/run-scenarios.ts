@@ -4,8 +4,7 @@ import { isRuntimeScenario } from './resolve.js'
 import type { AnyScenario } from './resolve.js'
 import type { RunContext } from './run-context.js'
 
-const DEFAULT_TIMEOUT_MS = 30_000
-const DEFAULT_RUNTIME_TIMEOUT_MS = 60_000
+import { DEFAULT_ADMISSION_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MS } from '../../../../constants.js'
 
 export interface RunScenariosOpts {
     namespace: string
@@ -85,7 +84,7 @@ async function executeOne(
         }
     }
 
-    const timeoutMs = opts.timeout ? parseInt(opts.timeout, 10) : DEFAULT_TIMEOUT_MS
+    const timeoutMs = opts.timeout ? parseInt(opts.timeout, 10) : DEFAULT_ADMISSION_TIMEOUT_MS
     const execution = await ctx.executor.execute(scenario, { namespace, timeoutMs })
     const validation = ctx.validator.validate(scenario, execution)
     const createdResources = execution.createdResourceName

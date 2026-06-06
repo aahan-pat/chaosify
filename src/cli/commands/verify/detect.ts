@@ -12,11 +12,8 @@ import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import type { RuntimeScenarioDefinition, RuntimeExpectedOutcomeType } from '../../../types/runtime-scenario.js'
 import { header, field, section, indent, outcomeLabel, blank, printAlertSection, printCleanupWarning } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE, DEFAULT_OBSERVATION_WINDOW_S, DEFAULT_POD_TIMEOUT_S } from '../../../constants.js'
 import chalk from 'chalk'
-
-const DEFAULT_OBSERVATION_WINDOW_S = 10
-const DEFAULT_POD_TIMEOUT_S = 60
 
 const VALID_EXPECTS = ['alert_fired', 'action_blocked', 'no_alert'] as const
 type DetectExpect = (typeof VALID_EXPECTS)[number]

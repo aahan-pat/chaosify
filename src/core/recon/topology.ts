@@ -1,6 +1,7 @@
 import { spawn, type SpawnOptions } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import type { ReconOptions, ReconToolResult } from '../../types/recon.js'
+import { GRAPHNETES_BUILD_TIMEOUT_MS } from '../../constants.js'
 
 const GRAPH_DIR = 'graphnetes-out'
 const GRAPH_PATH = `${GRAPH_DIR}/graph.json`
@@ -30,7 +31,7 @@ function spawnAsync(cmd: string, args: string[], silent: boolean): Promise<void>
         const timeout = setTimeout(() => {
             child.kill('SIGTERM')
             reject(new Error('graphnetes build timed out after 60 seconds'))
-        }, 60_000)
+        }, GRAPHNETES_BUILD_TIMEOUT_MS)
 
         child.on('error', (err: NodeJS.ErrnoException) => {
             clearTimeout(timeout)

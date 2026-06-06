@@ -7,7 +7,7 @@ import type { Command } from 'commander'
 import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import { header, field, section, indent, outcomeLabel, blank } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from '../../../constants.js'
 
 const VALID_EXPECTS = ['allowed', 'denied'] as const
 type IdentityExpect = (typeof VALID_EXPECTS)[number]

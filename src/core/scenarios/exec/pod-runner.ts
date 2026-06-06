@@ -4,9 +4,7 @@
 import * as k8s from '@kubernetes/client-node'
 import stream from 'node:stream'
 
-const POD_READY_POLL_INTERVAL_MS = 500
-const STDOUT_MAX_BYTES = 4096
-const STDERR_MAX_BYTES = 4096
+import { POD_READY_POLL_INTERVAL_MS, STDOUT_MAX_BYTES, STDERR_MAX_BYTES, POD_GENERATE_NAME } from '../../../constants.js'
 
 export interface ExecOutcome {
     result: 'succeeded' | 'failed' | 'denied' | 'timeout'
@@ -154,7 +152,7 @@ export function injectNamespace(
     const meta = (manifest['metadata'] as Record<string, unknown> | undefined) ?? {}
     return {
         ...manifest,
-        metadata: { ...meta, namespace, generateName: 'chaosify-test-', name: undefined },
+        metadata: { ...meta, namespace, generateName: POD_GENERATE_NAME, name: undefined },
     }
 }
 

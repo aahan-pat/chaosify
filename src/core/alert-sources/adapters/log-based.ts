@@ -4,9 +4,7 @@
 import * as k8s from '@kubernetes/client-node'
 import type { RuntimeAlertSource, RuntimeAlert } from '../types.js'
 
-const POLL_INTERVAL_MS = 2_000
-// Cap per poll so a very chatty agent doesn't stall the observation loop.
-const LOG_LIMIT_BYTES = 512_000
+import { ALERT_POLL_INTERVAL_MS, ALERT_LOG_LIMIT_BYTES } from '../../../constants.js'
 
 export abstract class LogBasedAlertSource implements RuntimeAlertSource {
     abstract readonly name: string
@@ -44,7 +42,7 @@ export abstract class LogBasedAlertSource implements RuntimeAlertSource {
             // Sleep only as long as the remaining window allows, to avoid overshooting the deadline.
             const remaining = deadline - Date.now()
             if (remaining <= 0) break
-            await new Promise(r => setTimeout(r, Math.min(POLL_INTERVAL_MS, remaining)))
+            await new Promise(r => setTimeout(r, Math.min(ALERT_POLL_INTERVAL_MS, remaining)))
         }
         return null
     }
@@ -83,7 +81,7 @@ export abstract class LogBasedAlertSource implements RuntimeAlertSource {
                     namespace: podNamespace,
                     container: this.containerName,
                     sinceSeconds,
-                    limitBytes: LOG_LIMIT_BYTES,
+                    limitBytes: ALERT_LOG_LIMIT_BYTES,
                 })
                 // Scan line-by-line and delegate JSON parsing to the subclass implementation.
                 for (const line of logs.split('\n')) {

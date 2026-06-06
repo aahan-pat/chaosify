@@ -3,7 +3,8 @@ import type { Command } from 'commander'
 import chalk from 'chalk'
 import { initNamespace, type InitResult } from '../../../core/setup/init.js'
 import { header, field, section, indent, blank, badge } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE } from '../recon/utils/shared.js'
+import { buildKubeConfig } from '../recon/utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "init" subcommand to the setup command group.

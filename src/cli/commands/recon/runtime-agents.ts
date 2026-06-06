@@ -1,7 +1,8 @@
 ﻿import type { Command } from 'commander'
 import { surveyRuntimeAgents, type AgentStatus } from '../../../core/recon/runtime-agents.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "runtime-agents" subcommand to the recon command group.

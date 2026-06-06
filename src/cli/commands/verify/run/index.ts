@@ -7,7 +7,7 @@ import { loadManifestScenario } from './manifest.js'
 import { buildRunContext } from './run-context.js'
 import { runScenarios } from './run-scenarios.js'
 import { printHeader, printSummary } from './print-results.js'
-import { DEFAULT_PROBE_NAMESPACE } from '../utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from '../../../../constants.js'
 
 /**
  * Attaches the "run" subcommand to the probe command group.

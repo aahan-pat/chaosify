@@ -2,7 +2,7 @@
 import type { Command } from 'commander'
 import { PreflightEngine } from '../../../core/setup/preflight.js'
 import { header, field, section, indent, preflightLabel, blank } from '../../output.js'
-import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
+import { DEFAULT_PROBE_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "preflight" subcommand to the probe command group.

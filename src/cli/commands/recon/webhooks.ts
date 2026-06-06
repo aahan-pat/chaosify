@@ -2,7 +2,8 @@
 import chalk from 'chalk'
 import { surveyWebhooks, type WebhookInfo } from '../../../core/recon/webhooks.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "webhooks" subcommand to the recon command group.

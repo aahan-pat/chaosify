@@ -3,6 +3,7 @@ import { coreV1Api, rbacV1Api } from '../kube/client.js'
 import { isNotFound } from '../kube/errors.js'
 import { runStep, type Step } from '../utils/step.js'
 import type { ReconOptions } from '../../types/recon.js'
+import { RESOURCE_QUOTA_NAME, RUNNER_NAME } from '../../constants.js'
 
 export interface TeardownResult {
     clusterContext: string
@@ -32,10 +33,10 @@ export async function teardownNamespace(kc: k8s.KubeConfig, options: ReconOption
 
     // Delete namespace-scoped resources in reverse-init order, then delete the namespace itself.
     const steps: Step[] = [
-        await runStep('RoleBinding chaosify-runner', () => deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: 'chaosify-runner', namespace: ns }))),
-        await runStep('Role chaosify-runner', () => deleteIfExists(() => rbac.deleteNamespacedRole({ name: 'chaosify-runner', namespace: ns }))),
-        await runStep('ServiceAccount chaosify-runner', () => deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: 'chaosify-runner', namespace: ns }))),
-        await runStep('ResourceQuota chaosify-quota', () => deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: 'chaosify-quota', namespace: ns }))),
+        await runStep(`RoleBinding ${RUNNER_NAME}`, () => deleteIfExists(() => rbac.deleteNamespacedRoleBinding({ name: RUNNER_NAME, namespace: ns }))),
+        await runStep(`Role ${RUNNER_NAME}`, () => deleteIfExists(() => rbac.deleteNamespacedRole({ name: RUNNER_NAME, namespace: ns }))),
+        await runStep(`ServiceAccount ${RUNNER_NAME}`, () => deleteIfExists(() => core.deleteNamespacedServiceAccount({ name: RUNNER_NAME, namespace: ns }))),
+        await runStep(`ResourceQuota ${RESOURCE_QUOTA_NAME}`, () => deleteIfExists(() => core.deleteNamespacedResourceQuota({ name: RESOURCE_QUOTA_NAME, namespace: ns }))),
         await runStep(`Namespace ${ns}`, () => deleteIfExists(() => core.deleteNamespace({ name: ns }))),
     ]
 

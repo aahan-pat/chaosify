@@ -25,8 +25,7 @@ export interface ExecutorOptions {
     timeoutMs?: number
 }
 
-// How long to wait for the Kubernetes API before treating the call as a timeout.
-const DEFAULT_TIMEOUT_MS = 30_000
+import { DEFAULT_ADMISSION_TIMEOUT_MS } from '../../../constants.js'
 
 /**
  * Applies scenario manifests to a live Kubernetes cluster and records what happened.
@@ -51,7 +50,7 @@ export class ScenarioExecutor {
         const manifestSnapshot = JSON.stringify(manifest)
 
         try {
-            const result = await this.applyWithTimeout(manifest, options.namespace, options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+            const result = await this.applyWithTimeout(manifest, options.namespace, options.timeoutMs ?? DEFAULT_ADMISSION_TIMEOUT_MS)
             return { ...result, manifestSnapshot, startedAt, endedAt: new Date().toISOString() }
         } catch (err: unknown) {
             const endedAt = new Date().toISOString()

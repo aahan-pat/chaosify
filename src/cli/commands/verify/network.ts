@@ -15,11 +15,7 @@ import { CleanupManager } from '../../../core/teardown/cleanup.js'
 import { EvidenceBuilder } from '../../../core/teardown/evidence-builder.js'
 import { header, field, section, indent, outcomeLabel, blank, printAlertSection, printCleanupWarning } from '../../output.js'
 import { buildKubeConfig } from '../recon/utils/shared.js'
-import { DEFAULT_PROBE_NAMESPACE } from './utils/shared.js'
-
-const DEFAULT_POD_TIMEOUT_S = 60
-const DEFAULT_CONNECT_TIMEOUT_S = 5
-const DEFAULT_OBSERVATION_WINDOW_S = 10
+import { DEFAULT_PROBE_NAMESPACE, DEFAULT_POD_TIMEOUT_S, DEFAULT_CONNECT_TIMEOUT_S, DEFAULT_OBSERVATION_WINDOW_S, POD_GENERATE_NAME } from '../../../constants.js'
 
 const VALID_PROTOCOLS = ['http', 'https', 'tcp'] as const
 type Protocol = (typeof VALID_PROTOCOLS)[number]
@@ -151,7 +147,7 @@ export function network(probe: Command): void {
 
                 // If an alert source is configured, poll for a correlated alert after the probe.
                 if (opts.alertSource !== 'none') {
-                    const alert = await alertSource.pollForAlert(opts.namespace, 'chaosify-test-', windowStart, observationWindowMs)
+                    const alert = await alertSource.pollForAlert(opts.namespace, POD_GENERATE_NAME, windowStart, observationWindowMs)
                     if (alert) {
                         alertJson = JSON.stringify(alert)
                         rawResponse = JSON.stringify({ protocol, reachable, httpStatus, responseTimeMs, errorType, alert })

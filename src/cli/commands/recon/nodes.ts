@@ -1,7 +1,8 @@
 ﻿import type { Command } from 'commander'
 import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, DEFAULT_RECON_NAMESPACE, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
  * Attaches the "nodes" subcommand to the recon command group.

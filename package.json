@@ -1,6 +1,6 @@
 {
   "name": "chaosify-kubernetes",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Deterministic CLI for Kubernetes Continuous Control Verification",
   "keywords": [
     "kubernetes",

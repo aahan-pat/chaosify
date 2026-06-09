@@ -41,5 +41,6 @@ export const ALERT_LOG_LIMIT_BYTES = 512_000
 export const POD_READY_POLL_INTERVAL_MS = 500
 
 // Bytes at which stdout and stderr are truncated to keep evidence artifacts from bloating.
-export const STDOUT_MAX_BYTES = 4096
-export const STDERR_MAX_BYTES = 4096
+// 64 KB gives agents enough room to read full recon command output without generating huge artifacts.
+export const STDOUT_MAX_BYTES = 65536
+export const STDERR_MAX_BYTES = 65536

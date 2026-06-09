@@ -193,8 +193,7 @@ async function loadDetectScenario(
         manifest,
         execStep: {
             container: resolvedContainer,
-            // Split the run string on spaces to produce the exec argv array.
-            command: run.split(' '),
+            command: ['/bin/sh', '-c', run],
         },
         expectedOutcome: { type: expect as RuntimeExpectedOutcomeType },
         cleanup: { deleteCreatedResources: true },

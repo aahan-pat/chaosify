@@ -75,7 +75,7 @@ export function exec(probe: Command): void {
             const podTimeoutMs = parseInt(opts.podTimeout, 10) * 1_000
             const execTimeoutMs = parseInt(opts.execTimeout, 10) * 1_000
             const observationWindowMs = parseInt(opts.observationWindow, 10) * 1_000
-            const command = opts.run.split(' ')
+            const command = ['/bin/sh', '-c', opts.run]
             const alertSource = buildAlertSource(opts.alertSource, kc)
             const cleanup = new CleanupManager(kc)
             const startedAt = new Date().toISOString()

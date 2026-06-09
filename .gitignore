@@ -16,15 +16,9 @@ coverage/
 graphify-out/
 CLAUDE.md
 
-# Probe files
-probe/
+# Agentic run artifacts — recon dumps, generated manifests, probe evidence.
+# All run output is routed under .chaosify/runs/<timestamp>/ by the skills.
+.chaosify/
 
 # Output files
 graphnetes-out/
-recon-*.json
-exec-*.json
-detect-*.json
-network-*.json
-identity-*.json
-topology-*.json
-chaosify-*.json

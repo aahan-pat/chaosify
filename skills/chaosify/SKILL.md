@@ -40,7 +40,7 @@ chaosify scenarios show <id>
 
 **Write to disk — manifest authoring:**
 ```
-Write <path>    generate pod manifest YAML before probing
+Write <run>/manifests/<name>.yaml    generate pod manifest YAML before probing
 ```
 
 **Cluster-mutating — all auto-cleanup, all namespace-scoped:**
@@ -56,6 +56,26 @@ chaosify probe exec --pod <path> --run "<cmd>" --expect <succeeded|failed|denied
 chaosify setup init    --context <ctx>
 chaosify setup cleanup --context <ctx>
 ```
+
+---
+
+## Run Output Directory
+
+Create one run directory at the start of every session and keep **all** artifacts under it — generated manifests and evidence JSON. Never scatter files into the working directory root. Use the UTC start time as the run id:
+
+```
+.chaosify/runs/<run>/        <run> = UTC start time, e.g. 2026-06-09T11-40-00Z
+```
+
+Within that single run root you are free to organize files as you see fit, with one rule: **bundle similar runtime artifacts into their own subfolders.** Keep generated YAML manifests separate from Chaosify's JSON evidence outputs. A natural grouping — the one the examples below use — is:
+
+```
+.chaosify/runs/<run>/
+  manifests/     generated pod YAML
+  results/       run + probe evidence JSON
+```
+
+but the subfolder names are yours to choose; only the single run root and the like-with-like grouping are required. Pick `<run>` once at the start and reuse the same path for every file this session, so each run is self-contained and comparable against the previous one (the `rerun_failed_scenarios` workflow diffs against the prior run's evidence). The harness shell does not persist variables between commands — substitute the literal path each time rather than relying on an env var. Chaosify never imposes this layout itself (`--output` writes wherever it is told), so routing artifacts here is your responsibility.
 
 ---
 
@@ -75,7 +95,7 @@ See `references/cli-reference.md` §Preflight. Abort on permission error; procee
 
 **Step 4 — Run the scenario pack.**
 ```bash
-chaosify probe run --pack preventive-baseline --context <context-name> --output chaosify-result.json
+chaosify probe run --pack preventive-baseline --context <context-name> --output .chaosify/runs/<run>/results/preventive-baseline.json
 ```
 See `references/cli-reference.md` §Run for runtime-baseline and single-scenario variants.
 
@@ -87,10 +107,10 @@ When a scenario passes but the policy may not cover all resource types, generate
 
 ```bash
 # Example: test whether the hostPath policy covers initContainers
-chaosify probe run --manifest ./probe-initcontainer.yaml --expect rejected --context <context-name>
+chaosify probe run --manifest .chaosify/runs/<run>/manifests/probe-initcontainer.yaml --expect rejected --context <context-name>
 ```
 
-Use the manifest building blocks below to construct targeted probes. Write each manifest with the `Write` tool before submitting.
+Use the manifest building blocks below to construct targeted probes. Write each manifest with the `Write` tool into `<run>/manifests/` before submitting.
 
 **Base manifest template:**
 ```yaml

@@ -19,14 +19,14 @@ chaosify probe preflight --context <context-name>
 chaosify probe run \
   --pack <preventive-baseline|runtime-baseline> \
   --context <context-name> \
-  --output chaosify-result.json
+  --output .chaosify/runs/<run>/results/preventive-baseline.json
 
 # Runtime pack with a detection tool
 chaosify probe run \
   --pack runtime-baseline \
   --alert-source <falco|tetragon|kubearmor|none> \
   --context <context-name> \
-  --output chaosify-runtime.json
+  --output .chaosify/runs/<run>/results/runtime-baseline.json
 ```
 
 ## Run — Single Scenario
@@ -55,7 +55,7 @@ chaosify probe exec \
   --expect <succeeded|failed|denied> \
   --alert-source <falco|tetragon|kubearmor|none> \
   --context <context-name> \
-  --output exec-result.json
+  --output .chaosify/runs/<run>/results/exec-result.json
 ```
 
 | `--expect` | Meaning |
@@ -73,7 +73,7 @@ chaosify probe network \
   --expect <reachable|unreachable> \
   --alert-source <falco|tetragon|kubearmor|none> \
   --context <context-name> \
-  --output network-result.json
+  --output .chaosify/runs/<run>/results/network-result.json
 ```
 
 Protocol is inferred from the target (`http://` → http, `https://` → https, `host:port` → tcp).
@@ -91,7 +91,7 @@ chaosify probe identity \
   --expect <allowed|denied> \
   --namespace <sa-namespace> \
   --context <context-name> \
-  --output identity-result.json
+  --output .chaosify/runs/<run>/results/identity-result.json
 ```
 
 Use slash notation for subresources: `--resource pods/exec`. Use `--group rbac.authorization.k8s.io` for RBAC resources. Requires `create subjectaccessreviews` permission — exit code 2 if denied.
@@ -108,7 +108,7 @@ chaosify probe detect \
   --alert-source <falco|tetragon|kubearmor|none> \
   --observation-window <seconds> \
   --context <context-name> \
-  --output detect-result.json
+  --output .chaosify/runs/<run>/results/detect-result.json
 ```
 
 ## Recon Commands

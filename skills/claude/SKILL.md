@@ -39,7 +39,7 @@ chaosify probe preflight --context <ctx>
 
 **Write to disk — manifest authoring:**
 ```
-Write <path>    generate a pod manifest YAML before probing
+Write <run>/manifests/<name>.yaml    generate a pod manifest YAML before probing
 ```
 
 **Cluster-mutating — all auto-cleanup, all namespace-scoped:**
@@ -60,6 +60,27 @@ chaosify setup cleanup --context <ctx>
 
 ---
 
+## Run Output Directory
+
+Create one run directory at the start of every session and keep **all** artifacts under it — recon dumps, generated manifests, and probe evidence. Never scatter files into the working directory root. Use the UTC start time as the run id:
+
+```
+.chaosify/runs/<run>/        <run> = UTC start time, e.g. 2026-06-09T11-40-00Z
+```
+
+Within that single run root you are free to organize files as you see fit, with one rule: **bundle similar runtime artifacts into their own subfolders.** Keep generated YAML manifests separate from Chaosify's JSON tool outputs, and recon dumps separate from probe evidence. A natural grouping — the one the examples below use — is:
+
+```
+.chaosify/runs/<run>/
+  recon/         recon-*.json
+  manifests/     generated pod YAML
+  results/       probe + run evidence JSON
+```
+
+but the subfolder names are yours to choose; only the single run root and the like-with-like grouping are required. Pick `<run>` once at the start and reuse the same path for every file this session, so each run is self-contained and comparable against previous runs (the rerun workflow diffs against the prior run's evidence). The harness shell does not persist variables between commands — substitute the literal path each time rather than relying on an env var. Chaosify never imposes this layout itself (`--output` writes wherever it is told), so routing artifacts here is your responsibility.
+
+---
+
 ## Phase 1 — Reconnaissance
 
 Confirm authorization and cluster context, initialize the test namespace, then survey the full cluster.
@@ -77,19 +98,19 @@ chaosify probe preflight --context <ctx>
 
 Abort on preflight permission error. Proceed through missing-policy-engine warnings.
 
-**Full recon survey — run all, write JSON output:**
+**Full recon survey — run all, write JSON into `<run>/recon/`:**
 ```bash
-chaosify recon webhooks         --context <ctx> --output recon-webhooks.json  --format json
-chaosify recon policies         --context <ctx> --output recon-policies.json  --format json
-chaosify recon psa              --context <ctx> --output recon-psa.json       --format json
-chaosify recon rbac             --context <ctx> --output recon-rbac.json      --format json
-chaosify recon nodes            --context <ctx> --output recon-nodes.json     --format json
-chaosify recon network-policies --context <ctx> --output recon-netpol.json   --format json
-chaosify recon runtime-agents   --context <ctx> --output recon-agents.json   --format json
-chaosify recon topology         --context <ctx> --output recon-topology.json --format json
+chaosify recon webhooks         --context <ctx> --output .chaosify/runs/<run>/recon/recon-webhooks.json  --format json
+chaosify recon policies         --context <ctx> --output .chaosify/runs/<run>/recon/recon-policies.json  --format json
+chaosify recon psa              --context <ctx> --output .chaosify/runs/<run>/recon/recon-psa.json       --format json
+chaosify recon rbac             --context <ctx> --output .chaosify/runs/<run>/recon/recon-rbac.json      --format json
+chaosify recon nodes            --context <ctx> --output .chaosify/runs/<run>/recon/recon-nodes.json     --format json
+chaosify recon network-policies --context <ctx> --output .chaosify/runs/<run>/recon/recon-netpol.json   --format json
+chaosify recon runtime-agents   --context <ctx> --output .chaosify/runs/<run>/recon/recon-agents.json   --format json
+chaosify recon topology         --context <ctx> --output .chaosify/runs/<run>/recon/recon-topology.json --format json
 ```
 
-Read all output files before proceeding. Select alert source from `recon-agents.json` now and use it consistently:
+Read all output files before proceeding. Select alert source from `<run>/recon/recon-agents.json` now and use it consistently:
 
 | Detected | Use |
 |---|---|
@@ -133,7 +154,7 @@ One hypothesis per manifest. Prioritize by severity: node escape > RBAC privileg
 
 ## Phase 3 — Manifest Generation
 
-Write every manifest with the `Write` tool before submitting. All generated manifests must:
+Write every manifest with the `Write` tool into `<run>/manifests/` before submitting. All generated manifests must:
 - Use `generateName: chaosify-test-` — never a static `name:` field
 - Set `restartPolicy: Never`
 - Use `busybox:1.36` or `alpine:3.19`
@@ -223,7 +244,7 @@ Choose the primitive that matches your hypothesis:
 | Runtime alert fires | `probe detect --pod <path> --run "<cmd>" --expect <alert_fired\|action_blocked\|no_alert>` |
 | SA has forbidden permission | `probe identity --as <sa> --can <verb> --resource <resource> --expect denied` |
 
-Always write `--output <name>.json` to produce a traceable evidence artifact.
+Always write `--output .chaosify/runs/<run>/results/<name>.json` to produce a traceable evidence artifact.
 
 **Exec commands by objective:**
 
@@ -322,7 +343,7 @@ chaosify probe identity \
   --namespace <sa-namespace> \
   [--group rbac.authorization.k8s.io] \
   --context <ctx> \
-  --output identity-result.json
+  --output .chaosify/runs/<run>/results/identity-result.json
 ```
 Requires `create subjectaccessreviews`. Exit code 2 if denied — do not treat as a control finding.
 

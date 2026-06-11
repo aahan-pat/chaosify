@@ -82,7 +82,7 @@ but the subfolder names are yours to choose; only the single run root and the li
 ## Workflow: `verify_cluster_baseline`
 
 **Step 1 — Resolve cluster context.**
-Run `kubectl config get-contexts`. Confirm the target context with the user before proceeding.
+Run `kubectl config get-contexts`. Confirm the target context with the user before proceeding. When confirming, tell the user that Chaosify creates its **own dedicated namespaces** — `chaosify` (setup/runner resources) and `chaosify-tests` (where all test workloads run) — separate from their application namespaces, so it is clear nothing is deployed into their existing namespaces.
 
 **Step 2 — Initialize the test namespace (first run only).**
 ```bash

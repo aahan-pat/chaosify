@@ -87,7 +87,7 @@ Confirm authorization and cluster context, initialize the test namespace, then s
 
 **Authorization (pentest):** Before any mutating operation, confirm:
 1. The user owns or is authorized to test this cluster.
-2. They understand test workloads will be submitted to the `chaosify-tests` namespace.
+2. They understand Chaosify creates its **own dedicated namespaces** for the assessment — `chaosify` (setup/runner resources) and `chaosify-tests` (where all test workloads run) — separate from their application namespaces, and that every test pod is namespace-scoped to `chaosify-tests` and auto-cleaned. State this to the user explicitly in the confirmation, so it is clear nothing is deployed into their existing namespaces.
 
 **Setup:**
 ```bash

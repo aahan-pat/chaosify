@@ -1,319 +1,268 @@
-﻿import { describe, it, expect, vi } from 'vitest'
-import * as k8s from '@kubernetes/client-node'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type * as k8s from '@kubernetes/client-node'
+
+// ---------------------------------------------------------------------------
+// Module mocks — surveyRbac is pod-first: it lists pods, execs to harvest each
+// mounted SA token, then fingerprints permissions via SelfSubjectRulesReview.
+// We mock the kube client factories and execInPod to drive those three steps.
+// ---------------------------------------------------------------------------
+
+vi.mock('../../../../src/core/kube/client.js', () => ({
+  coreV1Api: vi.fn(),
+  authorizationV1Api: vi.fn(),
+  // Returns a token-tagged sentinel so the authorization mock can resolve rules per identity.
+  kubeConfigWithToken: vi.fn((_base: unknown, token: string) => ({ token })),
+}))
+
+vi.mock('../../../../src/core/kube/pod.js', () => ({
+  execInPod: vi.fn(),
+}))
+
 import { surveyRbac } from '../../../../src/core/recon/rbac.js'
+import { coreV1Api, authorizationV1Api } from '../../../../src/core/kube/client.js'
+import { execInPod } from '../../../../src/core/kube/pod.js'
+import type { RbacThreatGraph } from '../../../../src/types/recon.js'
+
+const coreMock = coreV1Api as ReturnType<typeof vi.fn>
+const authzMock = authorizationV1Api as ReturnType<typeof vi.fn>
+const execMock = execInPod as ReturnType<typeof vi.fn>
+
+const OPTS = { namespace: 'chaosify' }
+const KC = {} as k8s.KubeConfig
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Builders
 // ---------------------------------------------------------------------------
 
-// Build a mock KubeConfig whose RbacAuthorizationV1Api methods are controllable.
-function makeKc(
-  listClusterRole: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ items: [] }),
-  listClusterRoleBinding: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ items: [] }),
-): k8s.KubeConfig {
+function pod(name: string, namespace: string, opts: {
+  sa?: string
+  automount?: boolean
+  phase?: string
+  container?: string
+} = {}): k8s.V1Pod {
   return {
-    makeApiClient: vi.fn().mockReturnValue({ listClusterRole, listClusterRoleBinding }),
-  } as unknown as k8s.KubeConfig
+    metadata: { name, namespace },
+    spec: {
+      serviceAccountName: opts.sa ?? 'default',
+      automountServiceAccountToken: opts.automount,
+      containers: [{ name: opts.container ?? 'main' }],
+    },
+    status: { phase: opts.phase ?? 'Running' },
+  } as k8s.V1Pod
 }
 
-// k8s errors use top-level statusCode — not response.statusCode or code.
+function rule(resources: string[], verbs: string[]): k8s.V1ResourceRule {
+  return { apiGroups: [''], resources, verbs }
+}
+
 function forbiddenErr(): Error {
   return Object.assign(new Error('Forbidden'), { statusCode: 403 })
 }
 
-function makeAdminBinding(name: string, subjects: k8s.V1Subject[]): k8s.V1ClusterRoleBinding {
-  return {
-    metadata: { name },
-    roleRef: { apiGroup: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: 'cluster-admin' },
-    subjects,
-  }
+// Configure the mocked client/exec layer for a single run.
+function setup(opts: {
+  pods?: k8s.V1Pod[]
+  listError?: unknown
+  // Rules returned by SelfSubjectRulesReview, keyed by harvested token (default key 'TOKEN').
+  rulesByToken?: Record<string, k8s.V1ResourceRule[]>
+  // Override execInPod behaviour per call; defaults to a successful harvest of 'TOKEN'.
+  exec?: ReturnType<typeof vi.fn>
+}) {
+  const listPodForAllNamespaces = opts.listError
+    ? vi.fn().mockRejectedValue(opts.listError)
+    : vi.fn().mockResolvedValue({ items: opts.pods ?? [] })
+  coreMock.mockReturnValue({ listPodForAllNamespaces })
+
+  execMock.mockImplementation(opts.exec ?? (() => Promise.resolve({ stdout: 'TOKEN', stderr: '', exitCode: 0 })))
+
+  const rulesByToken = opts.rulesByToken ?? {}
+  authzMock.mockImplementation((kc: { token: string }) => ({
+    createSelfSubjectRulesReview: vi.fn().mockResolvedValue({
+      status: { resourceRules: rulesByToken[kc.token] ?? [], nonResourceRules: [], incomplete: false },
+    }),
+  }))
+
+  return { listPodForAllNamespaces }
 }
 
-function makeRole(name: string, rules: k8s.V1PolicyRule[]): k8s.V1ClusterRole {
-  return { metadata: { name }, rules }
+function graphOf(result: Awaited<ReturnType<typeof surveyRbac>>): RbacThreatGraph {
+  return result.data as RbacThreatGraph
 }
 
-// A ClusterRole granting broad (no resourceNames) secret read access.
-function secretReadRole(name: string): k8s.V1ClusterRole {
-  return makeRole(name, [{ apiGroups: [''], resources: ['secrets'], verbs: ['get', 'list', 'watch'] }])
-}
-
-// A ClusterRole whose secret access is scoped to specific resource names.
-function scopedSecretReadRole(name: string): k8s.V1ClusterRole {
-  return makeRole(name, [{ apiGroups: [''], resources: ['secrets'], verbs: ['get'], resourceNames: ['specific-secret'] }])
-}
-
-// A ClusterRole using wildcard resources that still covers secret read.
-function wildcardResourceRole(name: string): k8s.V1ClusterRole {
-  return makeRole(name, [{ apiGroups: [''], resources: ['*'], verbs: ['get', 'list'] }])
-}
-
-// A ClusterRole using wildcard verbs that still covers secret read.
-function wildcardVerbRole(name: string): k8s.V1ClusterRole {
-  return makeRole(name, [{ apiGroups: [''], resources: ['secrets'], verbs: ['*'] }])
-}
-
-function bindingFor(roleName: string, subjects: k8s.V1Subject[]): k8s.V1ClusterRoleBinding {
-  return {
-    metadata: { name: `${roleName}-binding` },
-    roleRef: { apiGroup: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: roleName },
-    subjects,
-  }
-}
-
-function saPrincipal(name: string, namespace: string): k8s.V1Subject {
-  return { kind: 'ServiceAccount', name, namespace, apiGroup: '' }
-}
-
-const OPTS = { namespace: 'chaosify' }
-
-// ---------------------------------------------------------------------------
-// cluster-admin bindings
-// ---------------------------------------------------------------------------
-
-describe('surveyRbac — cluster-admin bindings', () => {
-  it('emits a HIGH finding for a User bound to cluster-admin', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('dev-admin', [{ kind: 'User', name: 'developer@example.com', apiGroup: '' }])],
-      }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    const high = result.findings.filter(f => f.severity === 'HIGH')
-    expect(high).toHaveLength(1)
-    expect(high[0]?.title).toMatch(/cluster-admin/i)
-    expect(high[0]?.detail).toContain('developer@example.com')
-  })
-
-  it('omits system-namespace subjects when includeSystem is false', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('system-binding', [{ kind: 'ServiceAccount', name: 'default', namespace: 'kube-system', apiGroup: '' }])],
-      }),
-    )
-    const result = await surveyRbac(kc, { ...OPTS, includeSystem: false })
-    expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(0)
-  })
-
-  it('includes system-namespace subjects when includeSystem is true', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('system-binding', [{ kind: 'ServiceAccount', name: 'default', namespace: 'kube-system', apiGroup: '' }])],
-      }),
-    )
-    const result = await surveyRbac(kc, { ...OPTS, includeSystem: true })
-    expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(1)
-  })
-
-  it('skips the built-in cluster-admin binding by name', async () => {
-    // The binding Kubernetes ships with is named "cluster-admin" and must be excluded.
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('cluster-admin', [{ kind: 'Group', name: 'system:masters', apiGroup: '' }])],
-      }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(0)
-  })
-
-  it('emits one HIGH per binding, not per subject', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [
-          makeAdminBinding('binding-a', [
-            { kind: 'User', name: 'alice@example.com', apiGroup: '' },
-            { kind: 'User', name: 'bob@example.com', apiGroup: '' },
-          ]),
-        ],
-      }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    // Both subjects appear in a single finding's detail, not as two separate findings.
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(1)
-    expect(result.findings[0]?.detail).toContain('alice@example.com')
-    expect(result.findings[0]?.detail).toContain('bob@example.com')
-  })
-
-  it('emits no WARN when a binding has no subjects', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('empty-binding', [])],
-      }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'WARN')).toHaveLength(0)
-  })
+beforeEach(() => {
+  coreMock.mockReset()
+  authzMock.mockReset()
+  execMock.mockReset()
 })
 
 // ---------------------------------------------------------------------------
-// cluster-wide secret read access
+// Permission unreachable → skip
 // ---------------------------------------------------------------------------
 
-describe('surveyRbac — cluster-wide secret read', () => {
-  it('emits a HIGH finding when a ServiceAccount has broad secret read via a ClusterRole', async () => {
-    const role = secretReadRole('secret-reader')
-    const binding = bindingFor('secret-reader', [saPrincipal('app-sa', 'production')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    const high = result.findings.filter(f => f.severity === 'HIGH')
-    expect(high).toHaveLength(1)
-    expect(high[0]?.title).toContain('app-sa')
-    expect(high[0]?.title).toContain('production')
-  })
-
-  it('does not emit HIGH when secret access is scoped to specific resourceNames', async () => {
-    const role = scopedSecretReadRole('scoped-reader')
-    const binding = bindingFor('scoped-reader', [saPrincipal('app-sa', 'production')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(0)
-  })
-
-  it('emits HIGH when the role uses wildcard resources covering secrets', async () => {
-    const role = wildcardResourceRole('wildcard-reader')
-    const binding = bindingFor('wildcard-reader', [saPrincipal('bad-sa', 'default')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(1)
-  })
-
-  it('emits HIGH when the role uses wildcard verbs on secrets', async () => {
-    const role = wildcardVerbRole('wildcard-verb-reader')
-    const binding = bindingFor('wildcard-verb-reader', [saPrincipal('bad-sa', 'default')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(1)
-  })
-
-  it('emits one HIGH per service account, not per binding', async () => {
-    const role = secretReadRole('reader')
-    const binding = bindingFor('reader', [saPrincipal('sa1', 'ns-a'), saPrincipal('sa2', 'ns-b')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(2)
-  })
-
-  it('does not emit HIGH for system SAs when includeSystem is false', async () => {
-    const role = secretReadRole('reader')
-    const binding = bindingFor('reader', [saPrincipal('controller', 'kube-system')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, { ...OPTS, includeSystem: false })
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(0)
-  })
-
-  it('emits no HIGH for User/Group subjects — only ServiceAccounts are tracked', async () => {
-    const role = secretReadRole('reader')
-    const binding = bindingFor('reader', [{ kind: 'User', name: 'admin@example.com', apiGroup: '' }])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [role] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(0)
-  })
-
-  it('skips secret-read analysis when the referenced role is not in the role list', async () => {
-    // Binding references "missing-role" which does not exist in the role list.
-    const binding = bindingFor('missing-role', [saPrincipal('app-sa', 'production')])
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [] }),
-      vi.fn().mockResolvedValue({ items: [binding] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'HIGH')).toHaveLength(0)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// 403 partial and full skips
-// ---------------------------------------------------------------------------
-
-describe('surveyRbac — 403 handling', () => {
-  it('returns skip status when both calls fail with 403', async () => {
-    const kc = makeKc(
-      vi.fn().mockRejectedValue(forbiddenErr()),
-      vi.fn().mockRejectedValue(forbiddenErr()),
-    )
-    const result = await surveyRbac(kc, OPTS)
+describe('surveyRbac — preflight', () => {
+  it('returns skip status when listing pods is forbidden', async () => {
+    setup({ listError: forbiddenErr() })
+    const result = await surveyRbac(KC, OPTS)
     expect(result.status).toBe('skip')
-    expect(result.findings.every(f => f.severity === 'SKIP')).toBe(true)
+    expect(result.findings[0]?.severity).toBe('SKIP')
   })
 
-  it('returns ok when bindings produce analysis findings even if roles return 403', async () => {
-    // A cluster-admin binding from a non-system User still produces a HIGH finding.
-    const kc = makeKc(
-      vi.fn().mockRejectedValue(forbiddenErr()),
-      vi.fn().mockResolvedValue({
-        items: [makeAdminBinding('dev-admin', [{ kind: 'User', name: 'dev@example.com', apiGroup: '' }])],
-      }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.status).toBe('ok')
-    expect(result.findings.some(f => f.severity === 'HIGH')).toBe(true)
-    // A SKIP finding for roles is still included alongside the analysis findings.
-    expect(result.findings.some(f => f.severity === 'SKIP')).toBe(true)
-  })
-
-  it('does NOT treat { code: 403 } as a permission error — only { statusCode: 403 } is recognised', async () => {
-    // Wrong error shape: the guard checks err.statusCode, not err.code.
-    const wrongShape = Object.assign(new Error('Forbidden'), { code: 403 })
-    const kc = makeKc(
-      vi.fn().mockRejectedValue(wrongShape),
-      vi.fn().mockResolvedValue({ items: [] }),
-    )
-    // isForbidden({ code: 403 }) === false, so the error is swallowed silently.
-    const result = await surveyRbac(kc, OPTS)
-    expect(result.findings.filter(f => f.severity === 'SKIP')).toHaveLength(0)
+  it('returns error status when pod listing throws a non-403 error', async () => {
+    setup({ listError: new Error('connection refused') })
+    const result = await surveyRbac(KC, OPTS)
+    expect(result.status).toBe('error')
   })
 })
 
 // ---------------------------------------------------------------------------
-// result data
+// Exploit-class detection
 // ---------------------------------------------------------------------------
 
-describe('surveyRbac — result data', () => {
-  it('reports role and binding counts in result.data', async () => {
-    const kc = makeKc(
-      vi.fn().mockResolvedValue({ items: [secretReadRole('r1'), secretReadRole('r2')] }),
-      vi.fn().mockResolvedValue({ items: [] }),
-    )
-    const result = await surveyRbac(kc, OPTS)
-    const data = result.data as { clusterRoleCount: number; clusterRoleBindingCount: number }
-    expect(data.clusterRoleCount).toBe(2)
-    expect(data.clusterRoleBindingCount).toBe(0)
+describe('surveyRbac — exploit classes', () => {
+  it('flags secret read as a HIGH secret_access finding', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get', 'list'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings).toHaveLength(1)
+    expect(graph.findings[0]?.exploitClasses).toContain('secret_access')
+    expect(graph.findings[0]?.severity).toBe('high')
   })
 
-  it('reports partial: true when at least one list call was skipped', async () => {
-    const kc = makeKc(
-      vi.fn().mockRejectedValue(forbiddenErr()),
-      vi.fn().mockResolvedValue({ items: [] }),
+  it('flags create clusterrolebindings as a critical privilege_escalation finding', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['clusterrolebindings'], verbs: ['create'] }] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings[0]?.exploitClasses).toContain('privilege_escalation')
+    expect(graph.findings[0]?.severity).toBe('critical')
+    expect(graph.findings[0]?.attackChain).toMatch(/cluster-admin/)
+  })
+
+  it('flags create pods as privilege_escalation (node breakout path)', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [rule(['pods'], ['create'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings[0]?.exploitClasses).toContain('privilege_escalation')
+  })
+
+  it('flags pods/exec as lateral_movement', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [rule(['pods/exec'], ['create'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings[0]?.exploitClasses).toContain('lateral_movement')
+  })
+
+  it('treats wildcard verbs and resources as cluster-admin-equivalent', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [{ apiGroups: ['*'], resources: ['*'], verbs: ['*'] }] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings[0]?.severity).toBe('critical')
+    expect(graph.findings[0]?.exploitClasses).toEqual(
+      expect.arrayContaining(['privilege_escalation', 'secret_access', 'lateral_movement']),
     )
-    const result = await surveyRbac(kc, OPTS)
-    const data = result.data as { partial: boolean }
-    expect(data.partial).toBe(true)
+  })
+
+  it('produces no findings (and an INFO summary) when the token holds nothing dangerous', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [rule(['pods'], ['get', 'list'])] },
+    })
+    const result = await surveyRbac(KC, OPTS)
+    const graph = graphOf(result)
+    expect(graph.findings).toHaveLength(0)
+    expect(result.findings[0]?.severity).toBe('INFO')
+    expect(result.findings[0]?.title).toMatch(/no exploitable privilege chains/i)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Token harvesting and scope
+// ---------------------------------------------------------------------------
+
+describe('surveyRbac — harvesting', () => {
+  it('skips pods with automount disabled and records a blind spot', async () => {
+    setup({ pods: [pod('app-1', 'default', { automount: false })] })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(execMock).not.toHaveBeenCalled()
+    expect(graph.tokensHarvested).toBe(0)
+    expect(graph.blindSpots.some(b => /automount/i.test(b))).toBe(true)
+  })
+
+  it('records a blind spot but does not abort when exec fails on a pod', async () => {
+    setup({
+      pods: [pod('app-1', 'default'), pod('app-2', 'default', { sa: 'reader' })],
+      exec: vi.fn()
+        .mockResolvedValueOnce({ stdout: '', stderr: 'no token', exitCode: 1 })
+        .mockResolvedValueOnce({ stdout: 'TOKEN', stderr: '', exitCode: 0 }),
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.blindSpots.some(b => b.includes('app-1'))).toBe(true)
+    expect(graph.findings).toHaveLength(1)
+    expect(graph.tokensHarvested).toBe(1)
+  })
+
+  it('only considers running pods', async () => {
+    setup({ pods: [pod('pending-1', 'default', { phase: 'Pending' })] })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.podsScanned).toBe(0)
+    expect(execMock).not.toHaveBeenCalled()
+  })
+
+  it('dedupes identities — one finding per (namespace, ServiceAccount)', async () => {
+    setup({
+      pods: [pod('replica-1', 'default', { sa: 'app' }), pod('replica-2', 'default', { sa: 'app' })],
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(execMock).toHaveBeenCalledTimes(1)
+    expect(graph.findings).toHaveLength(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// System-namespace scoping
+// ---------------------------------------------------------------------------
+
+describe('surveyRbac — system namespaces', () => {
+  it('excludes system-namespace pods by default', async () => {
+    setup({
+      pods: [pod('kube-proxy', 'kube-system'), pod('app-1', 'default')],
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.podsScanned).toBe(1)
+    expect(graph.findings.every(f => f.namespace !== 'kube-system')).toBe(true)
+  })
+
+  it('includes system-namespace pods when includeSystem is set', async () => {
+    setup({
+      pods: [pod('kube-proxy', 'kube-system')],
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, { ...OPTS, includeSystem: true }))
+    expect(graph.podsScanned).toBe(1)
+    expect(graph.findings[0]?.namespace).toBe('kube-system')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Blind spots are always honest about pod-first limits
+// ---------------------------------------------------------------------------
+
+describe('surveyRbac — blind spots', () => {
+  it('always reports the structural blind spots of pod-first recon', async () => {
+    setup({ pods: [] })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.blindSpots.some(b => /not bound to any running pod/i.test(b))).toBe(true)
   })
 })

@@ -23,6 +23,21 @@ If not found, tell the user to install Chaosify and stop. Do not attempt to inst
 
 ---
 
+## How Chaosify Recon Works — It Suggests Vectors, You Confirm Them
+
+Chaosify's recon does not just report posture. The `rbac` and `network-policies` tools emit a **pre-correlated threat graph**: each `data.findings[]` entry is a candidate attack vector — a reachable entry point (a specific pod), the `exploitClasses` it enables, an `attackChain`/`impact` narrative, and a `severity`. `network-policies` findings also carry an explicit `suggestedProbe` command; `rbac` findings carry the `dangerousPermissions` that map straight to a `probe identity` call. The CLI has already done the correlation — which pod carries which identity or exposure, and what it leads to — so you start from leads, not raw dumps.
+
+Treat every recon output as a **lead, not a verdict**:
+
+- The suggested probe (or the permission/exposure a finding hands you) is a hint, not a directive. **You** decide what to test. Run it as-is, run a sharper variant, chain it into a deeper path, or skip it for a higher-value vector — but never report a suggested vector as confirmed without a probe result backing it.
+- Triage by `severity` and exploit class, then spend your probe budget on the vectors most likely to be fruitful. A long list of suggestions is not a list of confirmed findings.
+- Read `data.blindSpots[]` — the CLI is explicit about what it could not see (e.g. whether the CNI actually enforces a NetworkPolicy). Those are gaps for you to close with a probe, not assumptions to make.
+- The other recon tools (`webhooks`, `policies`, `psa`, `nodes`, `runtime-agents`, `topology`) still report posture findings — same rule: a finding is a lead to confirm, never proof on its own.
+
+This is what makes Chaosify a pentesting tool and not a scanner: the CLI surfaces and correlates the attack surface; you reason about which paths are real and prove them.
+
+---
+
 ## Tool Inventory
 
 You operate within a constrained tool set. Do not use `kubectl` (except `config get-contexts`), `curl`, `helm`, or any shell command not listed here. Every cluster-mutating operation uses auto-cleanup and is namespace-scoped.
@@ -133,6 +148,8 @@ Then:    [admission_rejected | admission_allowed | exec_succeeds | alert_fires]
 ```
 
 One hypothesis per manifest. Prioritize by severity: node escape > RBAC privilege escalation > detection gaps > network segmentation > admission gaps.
+
+For `rbac` and `network-policies`, the hypothesis is mostly pre-formed: each `data.findings[]` entry already names the entry point, the exploit class, and the impact. Convert it straight into a probe — `network-policies` supplies the `suggestedProbe` command, `rbac` supplies the `dangerousPermissions` for a `probe identity` call. Confirm or sharpen the vector rather than re-deriving it. The table below is the manual mapping for the posture-only tools (and a fallback when the threat graph is empty).
 
 **Signal → hypothesis mapping:**
 

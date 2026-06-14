@@ -31,6 +31,38 @@ function pod(name: string, namespace: string, opts: { phase?: string } = {}): k8
   } as k8s.V1Pod
 }
 
+// A running pod whose spec actually exercises dangerous traits, for correlation tests.
+function dangerousPod(
+  name: string,
+  namespace: string,
+  spec: {
+    privileged?: boolean
+    allowPrivilegeEscalation?: boolean
+    addCaps?: string[]
+    hostNetwork?: boolean
+    hostPID?: boolean
+    hostPath?: boolean
+  },
+): k8s.V1Pod {
+  return {
+    metadata: { name, namespace },
+    status: { phase: 'Running' },
+    spec: {
+      hostNetwork: spec.hostNetwork,
+      hostPID: spec.hostPID,
+      volumes: spec.hostPath ? [{ name: 'h', hostPath: { path: '/etc' } }] : undefined,
+      containers: [{
+        name: 'c',
+        securityContext: {
+          privileged: spec.privileged,
+          allowPrivilegeEscalation: spec.allowPrivilegeEscalation,
+          capabilities: spec.addCaps ? { add: spec.addCaps } : undefined,
+        },
+      }],
+    },
+  } as k8s.V1Pod
+}
+
 function namespace(name: string, opts: { enforce?: string; audit?: string; warn?: string } = {}): k8s.V1Namespace {
   const labels: Record<string, string> = {}
   if (opts.enforce) labels['pod-security.kubernetes.io/enforce'] = opts.enforce
@@ -136,6 +168,122 @@ describe('surveyPsa — container_escape findings', () => {
     expect(f.severity).toBe('medium')
     expect(f.suggestedProbe).toContain('deny-privilege-escalation')
     expect(f.suggestedProbe).toContain('prod')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Confirmed chains — pod spec actually exercises an admitted dangerous trait
+// ---------------------------------------------------------------------------
+
+describe('surveyPsa — confirmed chains outrank permissive namespaces', () => {
+  it('escalates a privileged pod in a no-enforce namespace from HIGH to CRITICAL', async () => {
+    setup({
+      pods: [dangerousPod('priv', 'default', { privileged: true })],
+      namespaces: [namespace('default')],
+    })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+
+    expect(f.severity).toBe('critical')
+    expect(f.confirmed).toBe(true)
+    expect(f.observedTraits).toContain('privileged')
+    expect(f.exploitClasses).toEqual(['node_escape'])
+    expect(f.impact).toContain('confirmed node breakout')
+  })
+
+  it('keeps a benign pod in a no-enforce namespace at HIGH and marks it unconfirmed', async () => {
+    setup({ pods: [pod('app', 'default')], namespaces: [namespace('default')] })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+
+    expect(f.severity).toBe('high')
+    expect(f.confirmed).toBe(false)
+    expect(f.observedTraits).toEqual([])
+    expect(f.impact).toContain('no running pod currently exercises this')
+  })
+
+  it('treats hostNetwork, hostPath, and dangerous capabilities as node-escape traits', async () => {
+    for (const spec of [{ hostNetwork: true }, { hostPath: true }, { addCaps: ['NET_ADMIN'] }]) {
+      setup({ pods: [dangerousPod('x', 'default', spec)], namespaces: [namespace('default')] })
+      const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+      expect(f.severity).toBe('critical')
+      expect(f.confirmed).toBe(true)
+    }
+  })
+
+  it('does not treat NET_BIND_SERVICE as a dangerous capability', async () => {
+    setup({
+      pods: [dangerousPod('x', 'default', { addCaps: ['NET_BIND_SERVICE'] })],
+      namespaces: [namespace('default')],
+    })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+    expect(f.severity).toBe('high')
+    expect(f.observedTraits).not.toContain('dangerous_capabilities')
+  })
+
+  it('escalation-only in a no-enforce namespace stays HIGH but is confirmed', async () => {
+    setup({
+      pods: [dangerousPod('esc', 'default', { allowPrivilegeEscalation: true })],
+      namespaces: [namespace('default')],
+    })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+
+    expect(f.severity).toBe('high')
+    expect(f.confirmed).toBe(true)
+    expect(f.observedTraits).toEqual(['privilege_escalation'])
+    expect(f.impact).toContain('confirmed privilege escalation')
+  })
+
+  it('escalates a confirmed escalating pod in a baseline namespace from MEDIUM to HIGH', async () => {
+    setup({
+      pods: [dangerousPod('esc', 'prod', { allowPrivilegeEscalation: true })],
+      namespaces: [namespace('prod', { enforce: 'baseline' })],
+    })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+
+    expect(f.enforceLevel).toBe('baseline')
+    expect(f.severity).toBe('high')
+    expect(f.confirmed).toBe(true)
+    expect(f.exploitClasses).toEqual(['container_escape'])
+  })
+
+  it('does not confirm a node-escape trait that baseline would have blocked at admission', async () => {
+    // A privileged pod cannot be admitted under baseline; if seen, it predates the label and is
+    // not counted as a reachable chain — the finding stays a potential MEDIUM container_escape.
+    setup({
+      pods: [dangerousPod('priv', 'prod', { privileged: true })],
+      namespaces: [namespace('prod', { enforce: 'baseline' })],
+    })
+    const f = graphOf(await surveyPsa(KC, OPTS)).findings[0]!
+
+    expect(f.severity).toBe('medium')
+    expect(f.confirmed).toBe(false)
+    expect(f.observedTraits).toEqual([])
+  })
+
+  it('prefers a confirming pod as the example entry point over a benign replica', async () => {
+    setup({
+      pods: [pod('benign', 'default'), dangerousPod('priv', 'default', { privileged: true })],
+      namespaces: [namespace('default')],
+    })
+    const graph = graphOf(await surveyPsa(KC, OPTS))
+
+    // Both pods collapse into one namespace finding; the example pod is the smoking gun.
+    expect(graph.findings).toHaveLength(1)
+    const f = graph.findings[0]!
+    expect(f.examplePod).toBe('priv')
+    expect(f.podCount).toBe(2)
+    expect(f.severity).toBe('critical')
+  })
+
+  it('ranks a confirmed-critical namespace ahead of a permissive-high namespace', async () => {
+    setup({
+      pods: [pod('benign', 'ns-a'), dangerousPod('priv', 'ns-b', { privileged: true })],
+      namespaces: [namespace('ns-a'), namespace('ns-b')],
+    })
+    const findings = graphOf(await surveyPsa(KC, OPTS)).findings
+
+    expect(findings[0]!.severity).toBe('critical')
+    expect(findings[0]!.namespace).toBe('ns-b')
+    expect(findings[1]!.severity).toBe('high')
   })
 })
 

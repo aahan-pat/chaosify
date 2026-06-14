@@ -1,6 +1,7 @@
 ﻿import { describe, it, expect, vi } from 'vitest'
 import * as k8s from '@kubernetes/client-node'
 import { surveyWebhooks } from '../../../../src/core/recon/webhooks.js'
+import type { WebhookThreatGraph } from '../../../../src/types/recon.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -188,6 +189,37 @@ describe('surveyWebhooks — 403 handling', () => {
 // ---------------------------------------------------------------------------
 // result data
 // ---------------------------------------------------------------------------
+
+describe('surveyWebhooks — threat graph', () => {
+  it('emits a high-severity admission_bypass finding for a cluster-wide fail-open webhook', async () => {
+    const kc = makeKc(
+      vi.fn().mockResolvedValue({ items: [validatingConfig([{ name: 'cw.example.com', failurePolicy: 'Ignore' }])] }),
+    )
+    const data = (await surveyWebhooks(kc, OPTS)).data as WebhookThreatGraph
+    expect(data.findings).toHaveLength(1)
+    expect(data.findings[0]!.severity).toBe('high')
+    expect(data.findings[0]!.scope).toBe('cluster-wide')
+    expect(data.findings[0]!.exploitClasses).toEqual(['admission_bypass'])
+  })
+
+  it('scores a namespace-scoped fail-open webhook lower (medium) than a cluster-wide one', async () => {
+    const kc = makeKc(
+      vi.fn().mockResolvedValue({
+        items: [validatingConfig([{ name: 'ns.example.com', failurePolicy: 'Ignore', namespaceSelector: { matchLabels: { team: 'x' } } }])],
+      }),
+    )
+    const data = (await surveyWebhooks(kc, OPTS)).data as WebhookThreatGraph
+    expect(data.findings[0]!.scope).toBe('namespace-scoped')
+    expect(data.findings[0]!.severity).toBe('medium')
+  })
+
+  it('always reports reachability, rule-introspection, and overlap blind spots', async () => {
+    const data = (await surveyWebhooks(makeKc(), OPTS)).data as WebhookThreatGraph
+    expect(data.blindSpots.some(b => /reachability|health/i.test(b))).toBe(true)
+    expect(data.blindSpots.some(b => /rule/i.test(b))).toBe(true)
+    expect(data.blindSpots.some(b => /psa|policies/i.test(b))).toBe(true)
+  })
+})
 
 describe('surveyWebhooks — result data', () => {
   it('includes all webhook entries in result.data', async () => {

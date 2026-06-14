@@ -139,16 +139,33 @@ export type PsaExploitClass = 'node_escape' | 'container_escape'
 
 export type PsaThreatSeverity = 'critical' | 'high' | 'medium' | 'low'
 
+// Dangerous attributes a running pod's spec actually exercises. The first four are
+// node-escape traits (blocked at baseline+); privilege_escalation is admitted by baseline.
+export type PsaObservedTrait =
+    | 'privileged'
+    | 'host_namespaces'
+    | 'host_path'
+    | 'dangerous_capabilities'
+    | 'privilege_escalation'
+
 // One namespace's reachable pods sharing the same PSA enforcement gap.
 export interface PsaThreatFinding {
     namespace: string
-    /** A reachable running pod in this namespace — the concrete entry point. */
+    /** A reachable running pod in this namespace — the concrete entry point. Prefers a pod that confirms the chain. */
     examplePod: string
     /** How many running pods in this namespace share this exposure profile. */
     podCount: number
     enforceLevel: PsaEnforceLevel
     /** True when audit/warn labels exist but no enforce label — non-compliant pods are still admitted. */
     auditOnly: boolean
+    /**
+     * Dangerous traits a running pod actually exercises that the namespace's PSA level admits —
+     * the difference between a confirmed reachable chain and a merely-permissive namespace.
+     * Empty when the gap is only potential (no running pod exercises it).
+     */
+    observedTraits: PsaObservedTrait[]
+    /** True when ≥1 running pod confirms a reachable chain; false when the namespace is only permissive. */
+    confirmed: boolean
     exploitClasses: PsaExploitClass[]
     /** Human-readable entry point → PSA gap → impact narrative. */
     impact: string
@@ -164,6 +181,144 @@ export interface PsaThreatGraph {
     findings: PsaThreatFinding[]
     /** Honest about what the survey could not see (e.g. other admission controllers). */
     blindSpots: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Admission webhook threat graph (see webhooks command).
+// Admission webhooks are cluster config, not pod-reachable, so this is not a
+// pod-first survey — but it shares the threat-graph vocabulary (exploit classes,
+// scored severity, suggested probe, blind spots) so an agent reads psa, policies,
+// and webhooks as one consistent admission-control picture rather than three shapes.
+// ---------------------------------------------------------------------------
+
+export interface WebhookInfo {
+    name: string
+    type: 'validating' | 'mutating'
+    ruleCount: number
+    failurePolicy: string
+    scope: string
+}
+
+// The single class a webhook gap enables: a path to bypass admission enforcement.
+export type WebhookExploitClass = 'admission_bypass'
+
+export type WebhookThreatSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+// One fail-open webhook and the admission it leaves bypassable.
+export interface WebhookThreatFinding {
+    webhook: string
+    type: 'validating' | 'mutating'
+    /** cluster-wide is worse than namespace-scoped — a wider bypass. */
+    scope: string
+    failurePolicy: string
+    ruleCount: number
+    exploitClasses: WebhookExploitClass[]
+    impact: string
+    suggestedProbe: string
+    severity: WebhookThreatSeverity
+}
+
+export interface WebhookThreatGraph {
+    webhooksScanned: number
+    findings: WebhookThreatFinding[]
+    /** Raw inventory retained for the agent — every webhook, not just the flagged ones. */
+    webhooks: WebhookInfo[]
+    blindSpots: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Policy engine threat graph (see policies command).
+// Detects Kyverno / Gatekeeper and scores enforcement-mode gaps. Like webhooks,
+// this surveys cluster config rather than reachable pods; the honest limit — that
+// per-policy workload coverage is not simulated — is surfaced as a blind spot.
+// ---------------------------------------------------------------------------
+
+export type PolicyEngine = 'kyverno' | 'gatekeeper' | 'none'
+
+export interface PolicyInfo {
+    name: string
+    engine: PolicyEngine
+    /** 'Enforce' | 'Audit' for Kyverno; Gatekeeper does not surface this field. */
+    validationFailureAction?: string
+}
+
+export type PolicyExploitClass = 'admission_bypass'
+
+export type PolicyThreatSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+// One policy whose enforcement mode admits the workloads it claims to govern.
+export interface PolicyThreatFinding {
+    policy: string
+    engine: PolicyEngine
+    exploitClasses: PolicyExploitClass[]
+    impact: string
+    suggestedProbe: string
+    severity: PolicyThreatSeverity
+}
+
+export interface PolicyThreatGraph {
+    engine: PolicyEngine
+    policiesScanned: number
+    findings: PolicyThreatFinding[]
+    /** Raw inventory retained for the agent. */
+    policies: PolicyInfo[]
+    blindSpots: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Runtime detection threat graph (see runtime-agents command).
+// Detects Falco / KubeArmor / Tetragon / Tracee DaemonSets and scores detection
+// gaps: no agent at all, partial node coverage (pods on uncovered nodes run
+// unmonitored), and detect-only posture with no kernel-level enforcement.
+// ---------------------------------------------------------------------------
+
+export interface AgentStatus {
+    name: string
+    detected: boolean
+    readyNodes?: number
+    desiredNodes?: number
+    namespace?: string
+}
+
+// detection_gap: workloads execute unobserved. no_enforcement: threats are seen but not blocked.
+export type RuntimeExploitClass = 'detection_gap' | 'no_enforcement'
+
+export type RuntimeThreatSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+export interface RuntimeThreatFinding {
+    /** The agent the finding concerns, or '(none)' for a cluster-wide absence. */
+    agent: string
+    exploitClasses: RuntimeExploitClass[]
+    impact: string
+    suggestedProbe: string
+    severity: RuntimeThreatSeverity
+}
+
+export interface RuntimeThreatGraph {
+    daemonsetsScanned: number
+    agentsDetected: number
+    findings: RuntimeThreatFinding[]
+    /** Raw inventory retained for the agent — every known agent and its coverage. */
+    agents: AgentStatus[]
+    blindSpots: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Node inventory (see nodes command). Inventory, not a threat graph — kernel /
+// runtime / security-feature facts the agent uses as context, not scored chains.
+// ---------------------------------------------------------------------------
+
+export interface NodeInfo {
+    name: string
+    os: string
+    kernel: string
+    runtime: string
+    appArmorEnabled: boolean
+    /**
+     * The kubelet's seccomp-default posture is set by the --seccomp-default flag, which is not
+     * exposed in node status — so this is 'unknown', never fabricated. Confirm per-pod with probe run.
+     */
+    seccompDefault: string
 }
 
 export interface ReconOptions {

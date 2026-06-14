@@ -1,9 +1,10 @@
 ﻿import type { Command } from 'commander'
 import chalk from 'chalk'
-import { surveyPolicies, type PolicyEngine, type PolicyInfo } from '../../../core/recon/policies.js'
+import { surveyPolicies } from '../../../core/recon/policies.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
+import type { PolicyThreatGraph } from '../../../types/recon.js'
 
 /**
  * Attaches the "policies" subcommand to the recon command group.
@@ -45,7 +46,7 @@ export function policies(recon: Command): void {
                 process.exit(0)
             }
 
-            const data = result.data as { engine?: PolicyEngine; policies?: PolicyInfo[] }
+            const data = result.data as PolicyThreatGraph
             const detectedEngine = data.engine ?? 'none'
             const policyList = data.policies ?? []
 
@@ -69,7 +70,25 @@ export function policies(recon: Command): void {
                 }
             }
 
+            // policy → bypassable admission → impact, one block per Audit-mode gap.
+            if ((data.findings ?? []).length > 0) {
+                section('Admission Bypass Paths')
+                for (const f of data.findings) {
+                    blank()
+                    indent(`${f.policy}  [${f.severity}]  engine: ${f.engine}`)
+                    indent(`Exploit classes: ${f.exploitClasses.join(', ')}`, 4)
+                    indent(`Impact: ${f.impact}`, 4)
+                    indent(`Probe:  ${f.suggestedProbe}`, 4)
+                }
+            }
+
             renderFindings(result.findings)
+
+            // Surface what coverage analysis could not prove so conclusions stay scoped.
+            if ((data.blindSpots ?? []).length > 0) {
+                section('Blind Spots')
+                for (const b of data.blindSpots) indent(b)
+            }
 
             if (opts.output) {
                 section('Artifacts')

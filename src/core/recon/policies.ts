@@ -1,15 +1,18 @@
 import * as k8s from '@kubernetes/client-node'
 import { isForbidden, isNotFound } from '../kube/errors.js'
-import type { ReconFinding, ReconOptions, ReconToolResult } from '../../types/recon.js'
+import type {
+    ReconFinding,
+    ReconOptions,
+    ReconToolResult,
+    PolicyEngine,
+    PolicyInfo,
+    PolicyThreatFinding,
+    PolicyThreatGraph,
+    PolicyThreatSeverity,
+} from '../../types/recon.js'
 
-export type PolicyEngine = 'kyverno' | 'gatekeeper' | 'none'
-
-export interface PolicyInfo {
-    name: string
-    engine: PolicyEngine
-    /** 'Enforce' | 'Audit' for Kyverno; Gatekeeper does not surface this field. */
-    validationFailureAction?: string
-}
+// Re-exported for callers that still import these from this module.
+export type { PolicyEngine, PolicyInfo } from '../../types/recon.js'
 
 interface EngineProbeResult {
     installed: boolean
@@ -77,14 +80,65 @@ async function probeGatekeeper(kc: k8s.KubeConfig): Promise<EngineProbeResult> {
     }
 }
 
+const SEVERITY_BADGE: Record<PolicyThreatSeverity, ReconFinding['severity']> = {
+    critical: 'CRITICAL',
+    high: 'HIGH',
+    medium: 'WARN',
+    low: 'INFO',
+}
+
+// An Audit-mode policy logs violations but admits the workloads it claims to govern — a confirmed bypass.
+function classifyAuditPolicy(p: PolicyInfo): PolicyThreatFinding {
+    return {
+        policy: p.name,
+        engine: p.engine,
+        exploitClasses: ['admission_bypass'],
+        impact: `${p.name} is in Audit mode → violations are logged but non-compliant workloads are still admitted. For the rules this policy covers, the cluster behaves as if it had no policy at all.`,
+        suggestedProbe: `probe run --pack preventive-baseline`,
+        severity: 'high',
+    }
+}
+
 /**
- * Detects which policy engine is installed and surveys enforcement modes for audit-only gaps.
+ * Projects the threat graph into the shared ReconFinding shape. The no-engine state is a
+ * cluster-level CRITICAL; each Audit-mode policy is an individual scored bypass; an all-Enforce
+ * engine is a positive INFO. SKIP findings from permission denial are prepended by the caller.
+ */
+function toReconFindings(graph: PolicyThreatGraph): ReconFinding[] {
+    if (graph.engine === 'none') {
+        return [{
+            severity: 'CRITICAL',
+            title: 'No policy engine detected',
+            detail: 'Kyverno and OPA/Gatekeeper are not installed. The cluster has no admission-level policy enforcement beyond built-in PSA. All preventive-baseline scenarios will likely be SKIPPED — cross-reference recon psa and recon webhooks.',
+        }]
+    }
+
+    // Engine present but no policies readable (e.g. permission denied) — the SKIP finding carries the signal.
+    if (graph.policiesScanned === 0) return []
+
+    if (graph.findings.length > 0) {
+        return graph.findings.map(f => ({
+            severity: SEVERITY_BADGE[f.severity],
+            title: `${f.policy} is in Audit mode (${f.exploitClasses.join(', ')})`,
+            detail: f.impact,
+        }))
+    }
+
+    return [{
+        severity: 'INFO',
+        title: `${graph.policiesScanned} ${graph.engine} policy/policies detected — all in Enforce mode`,
+        detail: 'All policies are actively blocking non-compliant resources.',
+    }]
+}
+
+/**
+ * Detects which policy engine is installed and scores enforcement-mode gaps as admission-bypass paths.
  * @param kc Loaded kubeconfig to use for all API calls.
  * @param options Recon options; `options.engine` forces kyverno, gatekeeper, or auto-detection.
  */
 export async function surveyPolicies(kc: k8s.KubeConfig, options: ReconOptions): Promise<ReconToolResult> {
     const engineOverride = options.engine ?? 'auto'
-    const findings: ReconFinding[] = []
+    const skipFindings: ReconFinding[] = []
     const policies: PolicyInfo[] = []
     let detectedEngine: PolicyEngine = 'none'
 
@@ -94,15 +148,13 @@ export async function surveyPolicies(kc: k8s.KubeConfig, options: ReconOptions):
         if (result.installed) {
             detectedEngine = 'kyverno'
             policies.push(...result.policies)
-            if (result.permissionDenied) {
-                findings.push({
-                    severity: 'SKIP',
-                    title: 'Kyverno policy read skipped',
-                    detail: 'Kyverno is installed but clusterpolicies cannot be listed — insufficient permissions',
-                    missingPermission: 'list clusterpolicies.kyverno.io',
-                    coverageImpact: 'Kyverno policy enforcement modes cannot be assessed',
-                })
-            }
+            if (result.permissionDenied) skipFindings.push({
+                severity: 'SKIP',
+                title: 'Kyverno policy read skipped',
+                detail: 'Kyverno is installed but clusterpolicies cannot be listed — insufficient permissions',
+                missingPermission: 'list clusterpolicies.kyverno.io',
+                coverageImpact: 'Kyverno policy enforcement modes cannot be assessed',
+            })
         }
     }
 
@@ -112,45 +164,39 @@ export async function surveyPolicies(kc: k8s.KubeConfig, options: ReconOptions):
         if (result.installed) {
             detectedEngine = 'gatekeeper'
             policies.push(...result.policies)
-            if (result.permissionDenied) {
-                findings.push({
-                    severity: 'SKIP',
-                    title: 'Gatekeeper constraint read skipped',
-                    detail: 'Gatekeeper is installed but constrainttemplates cannot be listed — insufficient permissions',
-                    missingPermission: 'list constrainttemplates.constraints.gatekeeper.sh',
-                    coverageImpact: 'Gatekeeper constraint coverage cannot be assessed',
-                })
-            }
+            if (result.permissionDenied) skipFindings.push({
+                severity: 'SKIP',
+                title: 'Gatekeeper constraint read skipped',
+                detail: 'Gatekeeper is installed but constrainttemplates cannot be listed — insufficient permissions',
+                missingPermission: 'list constrainttemplates.constraints.gatekeeper.sh',
+                coverageImpact: 'Gatekeeper constraint coverage cannot be assessed',
+            })
         }
     }
 
-    if (detectedEngine === 'none') {
-        // No engine is a CRITICAL gap — all preventive-baseline scenarios will likely be SKIPPED.
-        findings.push({
-            severity: 'CRITICAL',
-            title: 'No policy engine detected',
-            detail: 'Kyverno and OPA/Gatekeeper are not installed. The cluster has no admission-level policy enforcement beyond built-in PSA. All preventive-baseline scenarios will likely be SKIPPED.',
-        })
-    } else if (policies.length > 0) {
-        // Each audit-only policy logs violations but admits non-compliant resources — flag individually.
-        const auditOnly = policies.filter(p => p.validationFailureAction?.toLowerCase() === 'audit')
-        for (const p of auditOnly) {
-            findings.push({
-                severity: 'WARN',
-                title: `${p.name} is in Audit mode`,
-                detail: 'Violations are logged but non-compliant workloads are admitted — this policy does not block anything',
-            })
-        }
-        if (auditOnly.length === 0) {
-            findings.push({
-                severity: 'INFO',
-                title: `${policies.length} ${detectedEngine} policy/policies detected — all in Enforce mode`,
-                detail: 'All policies are actively blocking non-compliant resources',
-            })
-        }
+    // Each Audit-mode policy is a confirmed admission-bypass path.
+    const findings: PolicyThreatFinding[] = policies
+        .filter(p => p.validationFailureAction?.toLowerCase() === 'audit')
+        .map(classifyAuditPolicy)
+
+    const blindSpots = [
+        'Policy rule scope is not simulated — this survey reads enforcement *mode*, not which workloads each policy matches. An Enforce-mode policy scoped to the wrong namespaces or resources still leaves gaps. Confirm with probe run.',
+        'Kyverno background scans report violations on already-running pods but do not block them; only admission-time enforcement (Enforce mode) prevents creation.',
+        'Gatekeeper enforcementAction (deny/dryrun/warn) lives on individual Constraints, not the ConstraintTemplates probed here — Gatekeeper dryrun constraints are not flagged.',
+        'Namespaced Kyverno Policies and Gatekeeper Constraint instances are not enumerated — engine presence does not prove cluster-wide coverage. A policy engine may also overlap PSA; cross-reference recon psa and recon webhooks.',
+    ]
+
+    const graph: PolicyThreatGraph = {
+        engine: detectedEngine,
+        policiesScanned: policies.length,
+        findings,
+        policies,
+        blindSpots,
     }
+
+    const reconFindings = [...skipFindings, ...toReconFindings(graph)]
 
     // Status is 'skip' only when a permission error prevented all policy reads.
-    const isSkipped = findings.some(f => f.severity === 'SKIP') && policies.length === 0
-    return { tool: 'policies', status: isSkipped ? 'skip' : 'ok', findings, data: { engine: detectedEngine, policies } }
+    const isSkipped = skipFindings.length > 0 && policies.length === 0
+    return { tool: 'policies', status: isSkipped ? 'skip' : 'ok', findings: reconFindings, data: graph }
 }

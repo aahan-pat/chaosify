@@ -1,9 +1,10 @@
 ﻿import type { Command } from 'commander'
 import chalk from 'chalk'
-import { surveyWebhooks, type WebhookInfo } from '../../../core/recon/webhooks.js'
+import { surveyWebhooks } from '../../../core/recon/webhooks.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
+import type { WebhookThreatGraph } from '../../../types/recon.js'
 
 /**
  * Attaches the "webhooks" subcommand to the recon command group.
@@ -44,7 +45,8 @@ export function webhooks(recon: Command): void {
                 process.exit(0)
             }
 
-            const webhookList = (result.data as { webhooks?: WebhookInfo[] }).webhooks ?? []
+            const data = result.data as WebhookThreatGraph
+            const webhookList = data.webhooks ?? []
             const validating = webhookList.filter(w => w.type === 'validating')
             const mutating = webhookList.filter(w => w.type === 'mutating')
 
@@ -67,13 +69,32 @@ export function webhooks(recon: Command): void {
             if (mutating.length > 0) {
                 section(`Mutating Webhooks (${mutating.length})`)
                 for (const wh of mutating) {
+                    const failMark = wh.failurePolicy === 'Ignore' ? chalk.yellow('  ← fails open') : ''
                     blank()
                     indent(wh.name)
-                    indent(`Rules: ${wh.ruleCount}    Failure policy: ${wh.failurePolicy}    Scope: ${wh.scope}`, 4)
+                    indent(`Rules: ${wh.ruleCount}    Failure policy: ${wh.failurePolicy}    Scope: ${wh.scope}${failMark}`, 4)
+                }
+            }
+
+            // webhook → bypassable admission → impact, one block per fail-open path.
+            if ((data.findings ?? []).length > 0) {
+                section('Admission Bypass Paths')
+                for (const f of data.findings) {
+                    blank()
+                    indent(`${f.webhook}  [${f.severity}]  scope: ${f.scope}`)
+                    indent(`Exploit classes: ${f.exploitClasses.join(', ')}`, 4)
+                    indent(`Impact: ${f.impact}`, 4)
+                    indent(`Probe:  ${f.suggestedProbe}`, 4)
                 }
             }
 
             renderFindings(result.findings)
+
+            // Surface what coverage analysis could not prove so conclusions stay scoped.
+            if ((data.blindSpots ?? []).length > 0) {
+                section('Blind Spots')
+                for (const b of data.blindSpots) indent(b)
+            }
 
             if (opts.output) {
                 section('Artifacts')

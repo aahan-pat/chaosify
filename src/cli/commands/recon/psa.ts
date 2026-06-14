@@ -56,8 +56,11 @@ export function psa(recon: Command): void {
                 blank()
                 const more = f.podCount > 1 ? `  (+${f.podCount - 1} more pod(s))` : ''
                 const auditTag = f.auditOnly ? '  [audit-only]' : ''
-                indent(`${f.namespace}  pod: ${f.examplePod}  enforce: ${f.enforceLevel}  [${f.severity}]${auditTag}${more}`)
+                // Distinguish a confirmed reachable chain from a merely-permissive namespace.
+                const confirmTag = f.confirmed ? '  [confirmed]' : '  [potential]'
+                indent(`${f.namespace}  pod: ${f.examplePod}  enforce: ${f.enforceLevel}  [${f.severity}]${confirmTag}${auditTag}${more}`)
                 indent(`Exploit classes: ${f.exploitClasses.join(', ')}`, 4)
+                if (f.observedTraits.length > 0) indent(`Observed traits: ${f.observedTraits.join(', ')}`, 4)
                 indent(`Impact: ${f.impact}`, 4)
                 indent(`Probe:  ${f.suggestedProbe}`, 4)
             }

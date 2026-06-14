@@ -1,16 +1,10 @@
 import * as k8s from '@kubernetes/client-node'
 import { coreV1Api } from '../kube/client.js'
 import { reconWrapper } from '../utils/recon.js'
-import type { ReconFinding, ReconOptions, ReconToolResult } from '../../types/recon.js'
+import type { ReconFinding, ReconOptions, ReconToolResult, NodeInfo } from '../../types/recon.js'
 
-export interface NodeInfo {
-    name: string
-    os: string
-    kernel: string
-    runtime: string
-    appArmorEnabled: boolean
-    seccompDefault: string
-}
+// Re-exported for callers that still import the inventory type from this module.
+export type { NodeInfo } from '../../types/recon.js'
 
 // Extracts a flat NodeInfo summary from the Kubernetes node status and annotation fields.
 function extractNodeInfo(node: k8s.V1Node): NodeInfo {
@@ -22,7 +16,8 @@ function extractNodeInfo(node: k8s.V1Node): NodeInfo {
         runtime: info?.containerRuntimeVersion ?? 'unknown',
         // AppArmor presence is surfaced via node annotations in some distributions.
         appArmorEnabled: Object.keys(node.metadata?.annotations ?? {}).some(k => k.toLowerCase().includes('apparmor')),
-        seccompDefault: 'runtime/default',
+        // The kubelet --seccomp-default flag is not exposed in node status; report unknown rather than fabricate.
+        seccompDefault: 'unknown',
     }
 }
 

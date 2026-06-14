@@ -1,8 +1,9 @@
 ﻿import type { Command } from 'commander'
-import { surveyRuntimeAgents, type AgentStatus } from '../../../core/recon/runtime-agents.js'
+import { surveyRuntimeAgents } from '../../../core/recon/runtime-agents.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
+import type { RuntimeThreatGraph } from '../../../types/recon.js'
 
 /**
  * Attaches the "runtime-agents" subcommand to the recon command group.
@@ -43,7 +44,7 @@ export function runtimeAgents(recon: Command): void {
                 process.exit(0)
             }
 
-            const data = result.data as { daemonsetsScanned?: number; agents?: AgentStatus[] }
+            const data = result.data as RuntimeThreatGraph
             section('Runtime Detection')
             for (const agent of data.agents ?? []) {
                 if (agent.detected) {
@@ -57,7 +58,25 @@ export function runtimeAgents(recon: Command): void {
                 }
             }
 
+            // agent → detection gap → impact, one block per scored gap.
+            if ((data.findings ?? []).length > 0) {
+                section('Detection Gaps')
+                for (const f of data.findings) {
+                    blank()
+                    indent(`${f.agent}  [${f.severity}]`)
+                    indent(`Exploit classes: ${f.exploitClasses.join(', ')}`, 4)
+                    indent(`Impact: ${f.impact}`, 4)
+                    indent(`Probe:  ${f.suggestedProbe}`, 4)
+                }
+            }
+
             renderFindings(result.findings)
+
+            // Surface what coverage analysis could not prove so conclusions stay scoped.
+            if ((data.blindSpots ?? []).length > 0) {
+                section('Blind Spots')
+                for (const b of data.blindSpots) indent(b)
+            }
 
             if (opts.output) {
                 section('Artifacts')

@@ -124,6 +124,48 @@ export interface NetpolThreatGraph {
     blindSpots: string[]
 }
 
+// ---------------------------------------------------------------------------
+// PSA enforcement gap graph — pod-first recon (see psa command).
+// Each reachable running pod's namespace is evaluated for a PSA enforce label.
+// Absent or privileged enforce levels enable node_escape; baseline enables
+// container_escape. Restricted is the secure posture and emits no finding.
+// ---------------------------------------------------------------------------
+
+// The four possible enforce label values, plus 'none' for an absent label.
+export type PsaEnforceLevel = 'none' | 'privileged' | 'baseline' | 'restricted'
+
+// Attack classes a PSA gap enables — node_escape for unrestricted namespaces, container_escape for baseline.
+export type PsaExploitClass = 'node_escape' | 'container_escape'
+
+export type PsaThreatSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+// One namespace's reachable pods sharing the same PSA enforcement gap.
+export interface PsaThreatFinding {
+    namespace: string
+    /** A reachable running pod in this namespace — the concrete entry point. */
+    examplePod: string
+    /** How many running pods in this namespace share this exposure profile. */
+    podCount: number
+    enforceLevel: PsaEnforceLevel
+    /** True when audit/warn labels exist but no enforce label — non-compliant pods are still admitted. */
+    auditOnly: boolean
+    exploitClasses: PsaExploitClass[]
+    /** Human-readable entry point → PSA gap → impact narrative. */
+    impact: string
+    /** Non-binding probe the agent can run to confirm the gap. */
+    suggestedProbe: string
+    severity: PsaThreatSeverity
+}
+
+// Emitted in ReconToolResult.data — pre-correlated enforcement gaps plus blind spots.
+export interface PsaThreatGraph {
+    podsScanned: number
+    namespacesScanned: number
+    findings: PsaThreatFinding[]
+    /** Honest about what the survey could not see (e.g. other admission controllers). */
+    blindSpots: string[]
+}
+
 export interface ReconOptions {
     namespace: string
     context?: string

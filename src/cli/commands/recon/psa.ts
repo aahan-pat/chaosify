@@ -1,9 +1,9 @@
-﻿import type { Command } from 'commander'
-import chalk from 'chalk'
-import { surveyPsa, type NamespacePsaStatus } from '../../../core/recon/psa.js'
+import type { Command } from 'commander'
+import { surveyPsa } from '../../../core/recon/psa.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
 import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
+import type { PsaThreatGraph } from '../../../types/recon.js'
 
 /**
  * Attaches the "psa" subcommand to the recon command group.
@@ -12,17 +12,18 @@ import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 export function psa(recon: Command): void {
     recon
         .command('psa')
-        .description('Survey Pod Security Admission labels across all namespaces')
+        .description('Survey Pod Security Admission enforcement from reachable pods and flag open security gaps')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
         .option('--format <mode>', 'Output mode: table, json', 'table')
         .option('--output <path>', 'Write JSON result to file')
-        .action(async (opts: { context?: string; namespace: string; format: string; output?: string }) => {
+        .option('--include-system', 'Include system-namespace pods (excluded by default)')
+        .action(async (opts: { context?: string; namespace: string; format: string; output?: string; includeSystem?: boolean }) => {
             const { kc, clusterContext } = buildKubeConfig(opts.context)
 
             let result
             try {
-                result = await surveyPsa(kc, { namespace: opts.namespace, context: opts.context })
+                result = await surveyPsa(kc, { namespace: opts.namespace, context: opts.context, includeSystem: opts.includeSystem })
             } catch (err) {
                 console.error(`\nError\n  PSA recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
@@ -44,24 +45,30 @@ export function psa(recon: Command): void {
                 process.exit(0)
             }
 
-            const namespaces = (result.data as { namespaces?: NamespacePsaStatus[] }).namespaces ?? []
-            // Pad a PSA level to a fixed column width, replacing absent labels with '—'.
-            const col = (s: string | undefined, width = 14) => (s ?? '—').padEnd(width)
+            const data = result.data as PsaThreatGraph
+            section('Enforcement Gap Graph')
+            indent(`Pods scanned:        ${data.podsScanned ?? 0}`)
+            indent(`Namespaces surveyed: ${data.namespacesScanned ?? 0}`)
+            indent(`Enforcement gaps:    ${data.findings?.length ?? 0}`)
 
-            section('Namespace PSA Labels')
-            blank()
-            // Fixed-width header row so columns align with the data rows below.
-            indent(`${'Namespace'.padEnd(28)} ${'Enforce'.padEnd(14)} ${'Audit'.padEnd(14)} Warn`)
-            indent('─'.repeat(72))
-            for (const ns of namespaces) {
-                // Flag non-system namespaces with no labels — they are completely unprotected.
-                const mark = !ns.enforce && !ns.audit && !ns.warn && !ns.isSystem
-                    ? chalk.yellow('  ← no labels')
-                    : ''
-                indent(`${ns.namespace.padEnd(28)} ${col(ns.enforce)} ${col(ns.audit)} ${col(ns.warn)}${mark}`)
+            // namespace → entry-point pod → PSA gap → impact, one block per open path.
+            for (const f of data.findings ?? []) {
+                blank()
+                const more = f.podCount > 1 ? `  (+${f.podCount - 1} more pod(s))` : ''
+                const auditTag = f.auditOnly ? '  [audit-only]' : ''
+                indent(`${f.namespace}  pod: ${f.examplePod}  enforce: ${f.enforceLevel}  [${f.severity}]${auditTag}${more}`)
+                indent(`Exploit classes: ${f.exploitClasses.join(', ')}`, 4)
+                indent(`Impact: ${f.impact}`, 4)
+                indent(`Probe:  ${f.suggestedProbe}`, 4)
             }
 
             renderFindings(result.findings)
+
+            // Surface what coverage analysis could not prove so conclusions stay scoped.
+            if ((data.blindSpots ?? []).length > 0) {
+                section('Blind Spots')
+                for (const b of data.blindSpots) indent(b)
+            }
 
             if (opts.output) {
                 section('Artifacts')

@@ -25,7 +25,11 @@ chaosify recon runtime-agents     # detect Falco, KubeArmor, Tetragon, Tracee
 chaosify recon topology           # resource topology graph: ingress paths, secret mounts, SA bindings (requires graphnetes)
 ```
 
-All recon tools support `--output <file>` and `--format json`.
+All recon tools support `--output <file>` and `--format <table|json|summary>`. The
+`summary` mode emits a compact TSV — one deduped row per finding, with scan
+metadata and blind spots as `#` comment lines — built for low-token agent
+consumption; see [recon summary format](recon-summary-format.md). With `--output`,
+`summary` writes the TSV artifact instead of the full JSON.
 
 ### Cluster readiness
 
@@ -113,7 +117,7 @@ chaosify help
 | `--context <name>` | Kubernetes context to use |
 | `--namespace <name>` | Test namespace override (default: `chaosify`) |
 | `--output <path>` | Write JSON evidence artifact to file |
-| `--format <table\|json>` | Output mode |
+| `--format <table\|json\|summary>` | Output mode (`summary` = compact TSV, recon tools only) |
 | `--pack <id>` | Scenario pack to run |
 | `--scenario <id>` | Single scenario to run |
 | `--manifest <path>` | Manifest to submit (`probe run`) |

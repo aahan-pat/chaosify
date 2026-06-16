@@ -20,3 +20,12 @@ export function buildKubeConfig(context?: string): { kc: k8s.KubeConfig; cluster
 export async function writeJsonToFile(filePath: string, data: unknown): Promise<void> {
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
 }
+
+/**
+ * Writes plain text to a file (used by `--format summary` to persist the TSV artifact).
+ * @param filePath Destination file path.
+ * @param text Text to write; a trailing newline is ensured.
+ */
+export async function writeTextToFile(filePath: string, text: string): Promise<void> {
+    await writeFile(filePath, text.endsWith('\n') ? text : text + '\n', 'utf-8')
+}

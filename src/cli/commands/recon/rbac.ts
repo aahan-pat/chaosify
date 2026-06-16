@@ -1,7 +1,8 @@
 import type { Command } from 'commander'
 import { surveyRbac } from '../../../core/recon/rbac.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile, writeTextToFile } from './utils/shared.js'
+import { buildReconSummary } from '../../recon-summary.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 import type { RbacThreatGraph } from '../../../types/recon.js'
 
@@ -15,7 +16,7 @@ export function rbac(recon: Command): void {
         .description('Survey RBAC posture: harvest pod ServiceAccount tokens and flag exploitable privilege chains')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
-        .option('--format <mode>', 'Output mode: table, json', 'table')
+        .option('--format <mode>', 'Output mode: table, json, summary', 'table')
         .option('--output <path>', 'Write JSON result to file')
         .option('--include-system', 'Include system-namespace pods (excluded by default)')
         .action(async (opts: { context?: string; namespace: string; format: string; output?: string; includeSystem?: boolean }) => {
@@ -27,6 +28,13 @@ export function rbac(recon: Command): void {
             } catch (err) {
                 console.error(`\nError\n  RBAC recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
+            }
+
+            if (opts.format === 'summary') {
+                const text = buildReconSummary(result)
+                if (opts.output) await writeTextToFile(opts.output, text)
+                process.stdout.write(text + '\n')
+                process.exit(0)
             }
 
             if (opts.output) await writeJsonToFile(opts.output, result)
@@ -47,9 +55,9 @@ export function rbac(recon: Command): void {
 
             const data = result.data as RbacThreatGraph
             section('Threat Graph')
-            indent(`Pods scanned:     ${data.podsScanned ?? 0}`)
+            indent(`Pods scanned: ${data.podsScanned ?? 0}`)
             indent(`Tokens harvested: ${data.tokensHarvested ?? 0}`)
-            indent(`Exploit chains:   ${data.findings?.length ?? 0}`)
+            indent(`Exploit chains:  ${data.findings?.length ?? 0}`)
 
             // Pod → SA → Permissions → Impact, one block per discovered chain.
             for (const f of data.findings ?? []) {

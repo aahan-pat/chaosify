@@ -24,5 +24,6 @@ npx chaosify-kubernetes --help
 
 - [Architecture](docs/architecture.md) — system design, safety model, and multi-cluster model
 - [Reference](docs/reference.md) — complete command reference, flags, and exit codes
+- [Recon summary format](docs/recon-summary-format.md) — the low-token `recon … --format summary` TSV mode for agent consumption
 - [Scenarios](docs/scenarios.md) — full scenario library with control objectives and remediation
 - [Case Study: Kubernetes Goat](docs/case-study-kubernetes-goat.md) — end-to-end run against a deliberately vulnerable cluster

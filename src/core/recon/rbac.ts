@@ -145,6 +145,27 @@ const SEVERITY_BADGE: Record<RbacThreatSeverity, ReconFinding['severity']> = {
  * @param rules Effective rules from the pod's own namespace.
  * @param crossNamespaceRules Map of namespace → rules for namespaces other than the pod's own.
  */
+/**
+ * Collapses permission blocks that are identical on (apiGroups, resources, verbs)
+ * into one entry, unioning their exploit classes. The same effective rule is
+ * processed once per namespace scanned, so duplicates are expected and carry no
+ * extra information.
+ * @param perms Raw permission blocks, possibly containing duplicates.
+ */
+function dedupePermissions(perms: RbacDangerousPermission[]): RbacDangerousPermission[] {
+    const byKey = new Map<string, RbacDangerousPermission>()
+    for (const p of perms) {
+        const key = JSON.stringify([[...p.apiGroups].sort(), [...p.resources].sort(), [...p.verbs].sort()])
+        const existing = byKey.get(key)
+        if (existing) {
+            for (const c of p.exploitClasses) if (!existing.exploitClasses.includes(c)) existing.exploitClasses.push(c)
+        } else {
+            byKey.set(key, { ...p, exploitClasses: [...p.exploitClasses] })
+        }
+    }
+    return [...byKey.values()]
+}
+
 function buildThreatFinding(
     entry: PodEntryPoint,
     rules: k8s.V1ResourceRule[],
@@ -184,6 +205,11 @@ function buildThreatFinding(
     // Only identities that enable at least one exploit class are findings.
     if (classes.size === 0) return undefined
 
+    // Collapse identical permission blocks. The same rule is processed once per
+    // namespace (own + each cross-namespace set), so without this the array
+    // repeats verbatim — the single largest source of bloat in the artifact.
+    const dedupedPermissions = dedupePermissions(dangerous)
+
     const exploitClasses = [...classes]
     const origin = entry.pod === '<none — orphaned secret>'
         ? `Orphaned SA token secret for '${entry.serviceAccount}' (ns ${entry.namespace})`
@@ -197,7 +223,7 @@ function buildThreatFinding(
         automountToken: entry.automountToken,
         tokenHarvested: true,
         exploitClasses,
-        dangerousPermissions: dangerous,
+        dangerousPermissions: dedupedPermissions,
         attackChain,
         severity: severityFor(exploitClasses),
         crossNamespaceAccess,

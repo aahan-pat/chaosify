@@ -130,6 +130,16 @@ describe('surveyRbac — exploit classes', () => {
     expect(graph.findings[0]?.severity).toBe('high')
   })
 
+  it('collapses identical permission blocks into one dangerousPermissions entry', async () => {
+    setup({
+      pods: [pod('app-1', 'default')],
+      // Same effective rule surfaced twice — without dedup it would repeat verbatim.
+      rulesByToken: { TOKEN: [rule(['secrets'], ['get', 'list']), rule(['secrets'], ['get', 'list'])] },
+    })
+    const graph = graphOf(await surveyRbac(KC, OPTS))
+    expect(graph.findings[0]?.dangerousPermissions).toHaveLength(1)
+  })
+
   it('flags create clusterrolebindings as a critical privilege_escalation finding', async () => {
     setup({
       pods: [pod('app-1', 'default')],

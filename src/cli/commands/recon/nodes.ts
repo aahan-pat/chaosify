@@ -1,7 +1,8 @@
 ﻿import type { Command } from 'commander'
 import { surveyNodes, type NodeInfo } from '../../../core/recon/nodes.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile, writeTextToFile } from './utils/shared.js'
+import { buildReconSummary } from '../../recon-summary.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
@@ -14,7 +15,7 @@ export function nodes(recon: Command): void {
         .description('Survey node security posture: kernel, container runtime, AppArmor and seccomp')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
-        .option('--format <mode>', 'Output mode: table, json', 'table')
+        .option('--format <mode>', 'Output mode: table, json, summary', 'table')
         .option('--output <path>', 'Write JSON result to file')
         .action(async (opts: { context?: string; namespace: string; format: string; output?: string }) => {
             const { kc, clusterContext } = buildKubeConfig(opts.context)
@@ -25,6 +26,13 @@ export function nodes(recon: Command): void {
             } catch (err) {
                 console.error(`\nError\n  Node recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
+            }
+
+            if (opts.format === 'summary') {
+                const text = buildReconSummary(result)
+                if (opts.output) await writeTextToFile(opts.output, text)
+                process.stdout.write(text + '\n')
+                process.exit(0)
             }
 
             if (opts.output) await writeJsonToFile(opts.output, result)

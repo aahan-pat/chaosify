@@ -1,7 +1,8 @@
 ﻿import type { Command } from 'commander'
 import { surveyRuntimeAgents } from '../../../core/recon/runtime-agents.js'
 import { header, field, section, indent, blank, renderFindings } from '../../output.js'
-import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile, writeTextToFile } from './utils/shared.js'
+import { buildReconSummary } from '../../recon-summary.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 import type { RuntimeThreatGraph } from '../../../types/recon.js'
 
@@ -15,7 +16,7 @@ export function runtimeAgents(recon: Command): void {
         .description('Detect runtime security agents: Falco, KubeArmor, Tetragon, Tracee')
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Recon namespace', DEFAULT_RECON_NAMESPACE)
-        .option('--format <mode>', 'Output mode: table, json', 'table')
+        .option('--format <mode>', 'Output mode: table, json, summary', 'table')
         .option('--output <path>', 'Write JSON result to file')
         .action(async (opts: { context?: string; namespace: string; format: string; output?: string }) => {
             const { kc, clusterContext } = buildKubeConfig(opts.context)
@@ -26,6 +27,13 @@ export function runtimeAgents(recon: Command): void {
             } catch (err) {
                 console.error(`\nError\n  Runtime agent recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
+            }
+
+            if (opts.format === 'summary') {
+                const text = buildReconSummary(result)
+                if (opts.output) await writeTextToFile(opts.output, text)
+                process.stdout.write(text + '\n')
+                process.exit(0)
             }
 
             if (opts.output) await writeJsonToFile(opts.output, result)

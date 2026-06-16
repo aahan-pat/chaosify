@@ -87,7 +87,7 @@ Within that single run root you are free to organize files as you see fit, with 
 
 ```
 .chaosify/runs/<run>/
-  recon/         recon-*.json
+  recon/         recon-*.tsv (summary; or .json when drilling into a finding)
   manifests/     generated pod YAML
   results/       probe + run evidence JSON
 ```
@@ -113,19 +113,25 @@ chaosify probe preflight --context <ctx>
 
 Abort on preflight permission error. Proceed through missing-policy-engine warnings.
 
-**Full recon survey — run all, write JSON into `<run>/recon/`:**
+**Full recon survey — run all, write into `<run>/recon/`.**
+
+Default to `--format summary` — a compact TSV (one deduped row per vector, scan
+metadata and blind spots as `#` lines) carrying every triage field at a fraction
+of the JSON token cost. Reach for `--format json` only to drill into one finding's
+full structure. Do **not** read all eight full JSON dumps into context — that is
+the largest avoidable context cost in a run.
 ```bash
-chaosify recon webhooks         --context <ctx> --output .chaosify/runs/<run>/recon/recon-webhooks.json  --format json
-chaosify recon policies         --context <ctx> --output .chaosify/runs/<run>/recon/recon-policies.json  --format json
-chaosify recon psa              --context <ctx> --output .chaosify/runs/<run>/recon/recon-psa.json       --format json
-chaosify recon rbac             --context <ctx> --output .chaosify/runs/<run>/recon/recon-rbac.json      --format json
-chaosify recon nodes            --context <ctx> --output .chaosify/runs/<run>/recon/recon-nodes.json     --format json
-chaosify recon network-policies --context <ctx> --output .chaosify/runs/<run>/recon/recon-netpol.json   --format json
-chaosify recon runtime-agents   --context <ctx> --output .chaosify/runs/<run>/recon/recon-agents.json   --format json
-chaosify recon topology         --context <ctx> --output .chaosify/runs/<run>/recon/recon-topology.json --format json
+chaosify recon webhooks         --context <ctx> --output .chaosify/runs/<run>/recon/recon-webhooks.tsv  --format summary
+chaosify recon policies         --context <ctx> --output .chaosify/runs/<run>/recon/recon-policies.tsv  --format summary
+chaosify recon psa              --context <ctx> --output .chaosify/runs/<run>/recon/recon-psa.tsv       --format summary
+chaosify recon rbac             --context <ctx> --output .chaosify/runs/<run>/recon/recon-rbac.tsv      --format summary
+chaosify recon nodes            --context <ctx> --output .chaosify/runs/<run>/recon/recon-nodes.tsv     --format summary
+chaosify recon network-policies --context <ctx> --output .chaosify/runs/<run>/recon/recon-netpol.tsv   --format summary
+chaosify recon runtime-agents   --context <ctx> --output .chaosify/runs/<run>/recon/recon-agents.tsv   --format summary
+chaosify recon topology         --context <ctx> --output .chaosify/runs/<run>/recon/recon-topology.tsv --format summary
 ```
 
-Read all output files before proceeding. Select alert source from `<run>/recon/recon-agents.json` now and use it consistently:
+Read all summaries before proceeding. Each non-`#` line is tab-delimited. Select alert source from `<run>/recon/recon-agents.tsv` now and use it consistently:
 
 | Detected | Use |
 |---|---|
@@ -170,6 +176,15 @@ For `rbac` and `network-policies`, the hypothesis is mostly pre-formed: each `da
 ---
 
 ## Phase 3 — Manifest Generation
+
+**Don't hand-roll one manifest per standard admission control to discover what is
+enforced — recon already told you, and `probe run --pack preventive-baseline`
+covers privileged, hostPath, host-network, forbidden-capabilities,
+privilege-escalation, latest-tag, and unapproved-registry in a single call.** Run
+the pack once, then author targeted manifests only for vectors the pack does not
+cover: a specific field combination, an `initContainers` bypass, a non-default
+namespace, or a compound node-escape path. One bespoke manifest per genuinely
+novel hypothesis — not per baseline control.
 
 Write every manifest with the `Write` tool into `<run>/manifests/` before submitting. All generated manifests must:
 - Use `generateName: chaosify-test-` — never a static `name:` field

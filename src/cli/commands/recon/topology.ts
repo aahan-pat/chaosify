@@ -2,7 +2,8 @@
 import chalk from 'chalk'
 import { surveyTopology, GRAPHNETES_REPO } from '../../../core/recon/topology.js'
 import { header, field, section, indent, blank } from '../../output.js'
-import { buildKubeConfig, writeJsonToFile } from './utils/shared.js'
+import { buildKubeConfig, writeJsonToFile, writeTextToFile } from './utils/shared.js'
+import { buildReconSummary } from '../../recon-summary.js'
 import { DEFAULT_RECON_NAMESPACE } from '../../../constants.js'
 
 /**
@@ -16,7 +17,7 @@ export function topology(recon: Command): void {
         .option('--context <name>', 'Kubernetes context to use')
         .option('--namespace <name>', 'Scope graph build to a namespace', DEFAULT_RECON_NAMESPACE)
         .option('--graph <path>', 'Use an existing graphnetes graph.json — skips the build step')
-        .option('--format <mode>', 'Output mode: table, json', 'table')
+        .option('--format <mode>', 'Output mode: table, json, summary', 'table')
         .option('--output <path>', 'Write JSON result to file')
         .action(async (opts: { context?: string; namespace: string; graph?: string; format: string; output?: string }) => {
             const silent = opts.format === 'json'
@@ -27,6 +28,13 @@ export function topology(recon: Command): void {
             } catch (err) {
                 console.error(`\nError\n  Topology recon failed: ${err instanceof Error ? err.message : String(err)}`)
                 process.exit(2)
+            }
+
+            if (opts.format === 'summary') {
+                const text = buildReconSummary(result)
+                if (opts.output) await writeTextToFile(opts.output, text)
+                process.stdout.write(text + '\n')
+                process.exit(0)
             }
 
             if (opts.output) await writeJsonToFile(opts.output, result)

@@ -29,7 +29,10 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",
-    "lint:fix": "oxlint src --fix"
+    "lint:fix": "oxlint src --fix",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@kubernetes/client-node": "^1.4.0",
@@ -46,6 +49,7 @@
     "tsdown": "0.21.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.0"
   },
   "engines": {

@@ -22,3 +22,7 @@ CLAUDE.md
 
 # Output files
 graphnetes-out/
+
+# VitePress build output and cache
+docs/.vitepress/dist/
+docs/.vitepress/cache/

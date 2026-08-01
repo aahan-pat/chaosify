@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Pod
-metadata:
-  name: unapproved-registry-pod
-spec:
-  containers:
-    - name: app
-      image: ghcr.io/some-org/some-image:1.0.0

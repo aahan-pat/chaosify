@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	initcmd "github.com/aahan-pat/chaosify/cmd/init"
+	reconcmd "github.com/aahan-pat/chaosify/cmd/recon"
 )
 
 // NewRootCmd builds the base command and attaches all subcommands. Each
@@ -33,6 +34,7 @@ to quickly create a Cobra application.`,
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	rootCmd.AddCommand(initcmd.New())
+	rootCmd.AddCommand(reconcmd.New())
 
 	return rootCmd
 }

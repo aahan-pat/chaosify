@@ -93,8 +93,10 @@ func TextInput(provided bool, value, title, description, placeholder string, pas
 		Description(description).
 		Placeholder(placeholder).
 		Password(password).
-		Validate(validate).
 		Value(&result)
+	if validate != nil {
+		field = field.Validate(validate)
+	}
 	if err := field.WithTheme(FormTheme()).Run(); err != nil {
 		return "", err
 	}

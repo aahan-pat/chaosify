@@ -1,19 +1,17 @@
-// Package kube wraps the client-go calls chaosify needs during onboarding:
-// discovering kubeconfig contexts (offline), and — once connected — resolving
-// identity and listing namespaces. Every call that talks to the API server takes
-// a context.Context so callers control timeouts and cancellation.
+// Package kube wraps the client-go calls chaosify needs. It is split by phase:
+// onboarding.go covers offline kubeconfig discovery and client construction;
+// recon.go covers the connected calls that resolve identity and enumerate the
+// cluster. Every call that talks to the API server takes a context.Context so
+// callers control timeouts and cancellation.
 package kube
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	authv1 "k8s.io/api/authentication/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -104,39 +102,4 @@ func newClient(restCfg *rest.Config) (*kubernetes.Clientset, string, error) {
 		return nil, "", fmt.Errorf("creating clientset: %w", err)
 	}
 	return clientset, restCfg.Host, nil
-}
-
-// WhoAmI resolves the caller's identity via a SelfSubjectReview. This is both the
-// identity echo ("Connected as ...") and chaosify's first recon call, so a
-// failure here is a genuine connection/authentication problem.
-func WhoAmI(ctx context.Context, clientset *kubernetes.Clientset) (string, error) {
-	review, err := clientset.AuthenticationV1().SelfSubjectReviews().
-		Create(ctx, &authv1.SelfSubjectReview{}, metav1.CreateOptions{})
-	if err != nil {
-		return "", fmt.Errorf("resolving identity (SelfSubjectReview): %w", err)
-	}
-	user := review.Status.UserInfo.Username
-	if user == "" {
-		user = "<unknown>"
-	}
-	if len(review.Status.UserInfo.Groups) > 0 {
-		return fmt.Sprintf("%s (groups: %s)", user,
-			strings.Join(review.Status.UserInfo.Groups, ", ")), nil
-	}
-	return user, nil
-}
-
-// ListNamespaces returns the names of namespaces the caller can read, sorted.
-// Callers treat a permission error as the signal to fall back to "default".
-func ListNamespaces(ctx context.Context, clientset *kubernetes.Clientset) ([]string, error) {
-	list, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("listing namespaces: %w", err)
-	}
-	names := make([]string, 0, len(list.Items))
-	for _, ns := range list.Items {
-		names = append(names, ns.Name)
-	}
-	sort.Strings(names)
-	return names, nil
 }

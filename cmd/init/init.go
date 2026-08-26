@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/aahan-pat/chaosify/internal/config"
 	"github.com/aahan-pat/chaosify/internal/types"
 	"github.com/aahan-pat/chaosify/internal/ui"
 )
@@ -78,7 +79,7 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	// Seed cfg from a previously saved engagement, if any. A first run (no
 	// .chaosclaw config) comes back as an empty config, not an error, so only a
 	// real read/parse failure stops us here.
-	cfg, err := loadExistingConfig()
+	cfg, err := config.LoadOptional()
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	echoSummary(cfg)
 
 	// Persist the resolved engagement so a later run can reload it.
-	if err := dumpConfig(cfg); err != nil {
+	if err := config.Save(cfg); err != nil {
 		return err
 	}
 

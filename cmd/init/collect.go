@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/aahan-pat/chaosify/internal/kube"
+	"github.com/aahan-pat/chaosify/internal/recon"
 	"github.com/aahan-pat/chaosify/internal/types"
 	"github.com/aahan-pat/chaosify/internal/ui"
 )
@@ -206,16 +207,16 @@ func collectManual(cmd *cobra.Command, changed func(string) bool, cfg *types.Con
 	return nil
 }
 
-// verifyIdentity opens Phase 2 (connected) — it is the first call runInit makes
+// verifyIdentity opens Phase 2 (connected) — it is thFe first call runInit makes
 // after buildClient produces a live client. It echoes the identity the cluster
-// reports (kube.WhoAmI) and makes the operator confirm it before any recon
+// reports (recon.WhoAmI) and makes the operator confirm it before any recon
 // proceeds to collectCluster. A declined identity aborts onboarding.
 func verifyIdentity(client *clientset, cfg *types.Config) error {
 	ui.PrintTitle("Identity")
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 	defer cancel()
 
-	who, err := kube.WhoAmI(ctx, client)
+	who, err := recon.WhoAmI(ctx, client)
 	if err != nil {
 		ui.PrintError("Could not verify identity: %v", err)
 		return err
@@ -271,7 +272,7 @@ func collectNamespaces(cmd *cobra.Command, changed func(string) bool, client *cl
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 	defer cancel()
 
-	all, err := kube.ListNamespaces(ctx, client)
+	all, err := recon.ListNamespaces(ctx, client)
 	if err != nil {
 		// Listing denied → fall back to "default" only, per the runbook.
 		ui.PrintWarn("Cannot list namespaces (%v); falling back to \"default\".", err)

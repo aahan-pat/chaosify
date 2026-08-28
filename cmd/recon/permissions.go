@@ -13,9 +13,10 @@ import (
 	"github.com/aahan-pat/chaosify/internal/ui"
 )
 
-// newPermissionsCmd builds `chaosify recon permissions`, which enumerates the
-// caller's effective permissions per namespace — the equivalent of running
-// `kubectl auth can-i --list` across the engagement scope.
+// newPermissionsCmd builds `chaosify recon get permissions`, which enumerates
+// the caller's effective permissions per namespace — the equivalent of running
+// `kubectl auth can-i --list` across the engagement scope. It lives under `get`
+// alongside the Tier 1 objects, but is itself the Tier 0 self-scoped probe.
 func newPermissionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "permissions",

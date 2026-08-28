@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 
+	getcmd "github.com/aahan-pat/chaosify/cmd/recon/get"
 	"github.com/aahan-pat/chaosify/internal/config"
 	"github.com/aahan-pat/chaosify/internal/kube"
 	"github.com/aahan-pat/chaosify/internal/types"
@@ -43,8 +44,12 @@ cluster before any active testing. Every subcommand operates as the identity
 resolved during init and only reads — it never mutates cluster state.`,
 	}
 
-	cmd.AddCommand(newPermissionsCmd())
-	cmd.AddCommand(newGetCmd())
+	// get lives in its own package; it takes a connector rather than reaching
+	// back into reconcmd. permissions is attached here (not inside get.New) so
+	// the get package need not import this one — that would be a cycle.
+	get := getcmd.New(connect)
+	get.AddCommand(newPermissionsCmd())
+	cmd.AddCommand(get)
 
 	return cmd
 }

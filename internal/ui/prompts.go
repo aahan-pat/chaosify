@@ -46,6 +46,12 @@ func PrintField(label, value string) {
 	lipgloss.Println(Label.Render(label+": ") + Value.Render(value))
 }
 
+// PrintItem prints an indented list entry, styled muted so it reads as detail
+// subordinate to the PrintTitle heading above it.
+func PrintItem(format string, a ...any) {
+	lipgloss.Println(Label.Render("    " + fmt.Sprintf(format, a...)))
+}
+
 // ---------------------------------------------------------------------------
 // Provided-else-prompt helpers
 //
